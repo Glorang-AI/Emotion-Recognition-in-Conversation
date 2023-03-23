@@ -4,8 +4,8 @@ from tqdm import tqdm
 import soundfile as sf
 from transformers import Wav2Vec2Model, Wav2Vec2FeatureExtractor
 
-def save_emb(audio_model_path, audio_data_path_data, device, save_path):
-    if not os.path.isfile('emb_train.pt'):
+def save_and_load(audio_model_path, audio_data_path_data, device, save_path):
+    if not os.path.isfile(save_path):
         emb_dict=dict()
         feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(audio_model_path)
         audio_encoder = Wav2Vec2Model.from_pretrained(audio_model_path)
@@ -27,7 +27,7 @@ def save_emb(audio_model_path, audio_data_path_data, device, save_path):
     
     return emb_dict
 
-def label_to_tensor(data):
-    label_dict = {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6}
-    data['labels'] = label_dict[data['labels']]
-    return data
+# def label_to_tensor(data):
+#     label_dict = {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6}
+#     data['labels'] = label_dict[data['labels']]
+#     return data
