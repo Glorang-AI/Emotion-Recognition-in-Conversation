@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "main.py", line 96, in <module>
-    main()
-  File "main.py", line 56, in main
-    train_df, val_df = train_test_split(dataset, test_size = wandb.config['val_ratio'], seed=config['seed'])
-TypeError: train_test_split() got an unexpected keyword argument 'seed'

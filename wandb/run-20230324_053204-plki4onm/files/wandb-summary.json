@@ -1,1 +1,0 @@
-{"loss": 0.6441807746887207, "_timestamp": 1679603655.6890976, "_runtime": 130.99195766448975, "_step": 305, "val_epoch_loss": 0.49198297717991996, "val_macro_f1_score": 0.14241810142993927, "val_weighted_f1_score": 0.7916745543479919, "val_accuracy": 0.8549172282218933, "_wandb": {"runtime": 130}}
