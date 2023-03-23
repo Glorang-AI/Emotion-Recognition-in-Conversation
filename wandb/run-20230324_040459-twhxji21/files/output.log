@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "main.py", line 99, in <module>
+    main()
+  File "main.py", line 62, in main
+    train_dataset = ETRIDataset(audio_embedding = audio_emb,
+TypeError: __init__() got an unexpected keyword argument 'emb_type'

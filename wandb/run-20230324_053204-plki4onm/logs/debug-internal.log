@@ -1,0 +1,42 @@
+2023-03-24 05:32:04,698 INFO    StreamThr :753505 [internal.py:wandb_internal():87] W&B internal server running at pid: 753505, started at: 2023-03-24 05:32:04.697855
+2023-03-24 05:32:04,699 DEBUG   HandlerThread:753505 [handler.py:handle_request():144] handle_request: status
+2023-03-24 05:32:04,701 INFO    WriterThread:753505 [datastore.py:open_for_write():85] open: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_053204-plki4onm/run-plki4onm.wandb
+2023-03-24 05:32:04,702 DEBUG   SenderThread:753505 [sender.py:send():336] send: header
+2023-03-24 05:32:04,722 DEBUG   SenderThread:753505 [sender.py:send():336] send: run
+2023-03-24 05:32:05,292 DEBUG   HandlerThread:753505 [handler.py:handle_request():144] handle_request: check_version
+2023-03-24 05:32:05,292 INFO    SenderThread:753505 [dir_watcher.py:__init__():219] watching files in: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_053204-plki4onm/files
+2023-03-24 05:32:05,292 INFO    SenderThread:753505 [sender.py:_start_run_threads():1078] run started: plki4onm with start time 1679603524.69714
+2023-03-24 05:32:05,292 DEBUG   SenderThread:753505 [sender.py:send_request():363] send_request: summary_record
+2023-03-24 05:32:05,293 INFO    SenderThread:753505 [sender.py:_save_file():1332] saving file wandb-summary.json with policy end
+2023-03-24 05:32:05,293 DEBUG   SenderThread:753505 [sender.py:send_request():363] send_request: check_version
+2023-03-24 05:32:05,318 DEBUG   HandlerThread:753505 [handler.py:handle_request():144] handle_request: run_start
+2023-03-24 05:32:05,325 DEBUG   HandlerThread:753505 [system_info.py:__init__():31] System info init
+2023-03-24 05:32:05,325 DEBUG   HandlerThread:753505 [system_info.py:__init__():46] System info init done
+2023-03-24 05:32:05,325 INFO    HandlerThread:753505 [system_monitor.py:start():183] Starting system monitor
+2023-03-24 05:32:05,325 INFO    SystemMonitor:753505 [system_monitor.py:_start():147] Starting system asset monitoring threads
+2023-03-24 05:32:05,325 INFO    HandlerThread:753505 [system_monitor.py:probe():204] Collecting system info
+2023-03-24 05:32:05,326 INFO    SystemMonitor:753505 [interfaces.py:start():187] Started cpu monitoring
+2023-03-24 05:32:05,327 INFO    SystemMonitor:753505 [interfaces.py:start():187] Started disk monitoring
+2023-03-24 05:32:05,327 INFO    SystemMonitor:753505 [interfaces.py:start():187] Started gpu monitoring
+2023-03-24 05:32:05,328 INFO    SystemMonitor:753505 [interfaces.py:start():187] Started memory monitoring
+2023-03-24 05:32:05,328 INFO    SystemMonitor:753505 [interfaces.py:start():187] Started network monitoring
+2023-03-24 05:32:05,375 DEBUG   HandlerThread:753505 [system_info.py:probe():195] Probing system
+2023-03-24 05:32:05,383 DEBUG   HandlerThread:753505 [system_info.py:_probe_git():180] Probing git
+2023-03-24 05:32:05,399 DEBUG   HandlerThread:753505 [system_info.py:_probe_git():188] Probing git done
+2023-03-24 05:32:05,400 DEBUG   HandlerThread:753505 [system_info.py:probe():240] Probing system done
+2023-03-24 05:32:05,400 DEBUG   HandlerThread:753505 [system_monitor.py:probe():213] {'os': 'Linux-5.15.0-46-generic-x86_64-with-glibc2.29', 'python': '3.8.10', 'heartbeatAt': '2023-03-23T20:32:05.375569', 'startedAt': '2023-03-23T20:32:04.691465', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': 'main.py', 'codePath': 'main.py', 'git': {'remote': 'https://github.com/Glorang-AI/Emotion-Recognition-in-Conversation.git', 'commit': '48ffc9f4f56f1204dc1f2442c50a191c78a2fa4b'}, 'email': 'yhoon13@gmail.com', 'root': '/home/popul/work_dir/Emotion-Recognition-in-Conversation', 'host': 'gpusystem', 'username': 'popul', 'executable': '/home/popul/work_dir/venv/bin/python3', 'cpu_count': 16, 'cpu_count_logical': 32, 'cpu_freq': {'current': 2208.16796875, 'min': 2200.0, 'max': 3900.0}, 'cpu_freq_per_core': [{'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2400.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2220.049, 'min': 2200.0, 'max': 3900.0}, {'current': 3900.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}, {'current': 2200.0, 'min': 2200.0, 'max': 3900.0}], 'disk': {'total': 1832.2072448730469, 'used': 826.3414421081543}, 'gpu': 'NVIDIA RTX A6000', 'gpu_count': 4, 'gpu_devices': [{'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}], 'memory': {'total': 251.53465270996094}}
+2023-03-24 05:32:05,400 INFO    HandlerThread:753505 [system_monitor.py:probe():214] Finished collecting system info
+2023-03-24 05:32:05,400 INFO    HandlerThread:753505 [system_monitor.py:probe():217] Publishing system info
+2023-03-24 05:32:05,400 DEBUG   HandlerThread:753505 [system_info.py:_save_pip():51] Saving list of pip packages installed into the current environment
+2023-03-24 05:32:05,400 DEBUG   HandlerThread:753505 [system_info.py:_save_pip():67] Saving pip packages done
+2023-03-24 05:32:05,401 INFO    HandlerThread:753505 [system_monitor.py:probe():219] Finished publishing system info
+2023-03-24 05:32:05,406 DEBUG   SenderThread:753505 [sender.py:send():336] send: files
+2023-03-24 05:32:05,406 INFO    SenderThread:753505 [sender.py:_save_file():1332] saving file wandb-metadata.json with policy now
+2023-03-24 05:32:05,410 DEBUG   HandlerThread:753505 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:32:05,411 DEBUG   SenderThread:753505 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:32:05,655 DEBUG   SenderThread:753505 [sender.py:send():336] send: telemetry
+2023-03-24 05:32:06,129 INFO    wandb-upload_0:753505 [upload_job.py:push():138] Uploaded file /tmp/tmpq_p9619swandb/mmt03ei2-wandb-metadata.json
+2023-03-24 05:32:06,294 INFO    Thread-13 :753505 [dir_watcher.py:_on_file_created():278] file/dir created: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_053204-plki4onm/files/wandb-metadata.json
+2023-03-24 05:32:06,294 INFO    Thread-13 :753505 [dir_watcher.py:_on_file_created():278] file/dir created: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_053204-plki4onm/files/requirements.txt
+2023-03-24 05:32:06,295 INFO    Thread-13 :753505 [dir_watcher.py:_on_file_created():278] file/dir created: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_053204-plki4onm/files/wandb-summary.json
+2023-03-24 05:32:10,656 DEBUG   HandlerThread:753505 [handler.py:handle_request():144] handle_request: status_report

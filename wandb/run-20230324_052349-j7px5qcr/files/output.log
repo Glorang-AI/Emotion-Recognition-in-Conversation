@@ -1,0 +1,21 @@
+Some weights of the model checkpoint at klue/bert-base were not used when initializing BertModel: ['cls.seq_relationship.weight', 'cls.predictions.transform.LayerNorm.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.bias', 'cls.predictions.transform.dense.bias', 'cls.predictions.transform.LayerNorm.weight', 'cls.predictions.decoder.weight', 'cls.predictions.decoder.bias', 'cls.seq_relationship.bias']
+- This IS expected if you are initializing BertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing BertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+  0%|                                                                                                                | 0/20 [00:00<?, ?it/s]
+  0%|                                                                                                                | 0/20 [00:01<?, ?it/s]
+Traceback (most recent call last):
+  File "main.py", line 108, in <module>
+    main()
+  File "main.py", line 105, in main
+    trainer.train()
+  File "/home/popul/work_dir/Emotion-Recognition-in-Conversation/trainer.py", line 28, in train
+    self._fit()
+  File "/home/popul/work_dir/Emotion-Recognition-in-Conversation/trainer.py", line 62, in _fit
+    loss = self.loss_fn(output, cls_label)
+  File "/home/popul/work_dir/venv/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/popul/work_dir/venv/lib/python3.8/site-packages/torch/nn/modules/loss.py", line 1174, in forward
+    return F.cross_entropy(input, target, weight=self.weight,
+  File "/home/popul/work_dir/venv/lib/python3.8/site-packages/torch/nn/functional.py", line 3029, in cross_entropy
+    return torch._C._nn.cross_entropy_loss(input, target, weight, _Reduction.get_enum(reduction), ignore_index, label_smoothing)
+TypeError: cross_entropy_loss(): argument 'input' (position 1) must be Tensor, not dict

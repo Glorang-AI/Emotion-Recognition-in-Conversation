@@ -1,0 +1,101 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.14.0
+    framework: huggingface
+    huggingface_version: 4.28.0.dev0
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.8.10
+    start_time: 1679602460.396348
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      - 49
+      - 51
+      - 53
+      - 55
+      - 71
+      2:
+      - 1
+      - 5
+      - 11
+      - 49
+      - 51
+      - 53
+      - 55
+      - 71
+      3:
+      - 13
+      - 16
+      - 23
+      4: 3.8.10
+      5: 0.14.0
+      6: 4.28.0.dev0
+      8:
+      - 5
+am_path:
+  desc: null
+  value: kresnik/wav2vec2-large-xlsr-korean
+audio_emb_type:
+  desc: null
+  value: last_hidden_state
+base_score:
+  desc: null
+  value: 0.45
+data_path:
+  desc: null
+  value: data/train.csv
+device:
+  desc: null
+  value: cuda:2
+embedding_path:
+  desc: null
+  value: data/emb_train.pt
+epochs:
+  desc: null
+  value: 20
+label_dict:
+  desc: null
+  value:
+    angry: 0
+    disqust: 4
+    fear: 6
+    happy: 3
+    neutral: 1
+    sad: 2
+    surprise: 5
+lm_path:
+  desc: null
+  value: klue/bert-base
+lr:
+  desc: null
+  value: 1.0e-05
+max_len:
+  desc: null
+  value: 128
+num_labels:
+  desc: null
+  value: 7
+num_workers:
+  desc: null
+  value: 4
+sav_dir:
+  desc: null
+  value: save
+seed:
+  desc: null
+  value: 42
+train_bsz:
+  desc: null
+  value: 64
+val_bsz:
+  desc: null
+  value: 64
+val_ratio:
+  desc: null
+  value: 0.1

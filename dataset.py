@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import torch
+import torch.nn.functional as F
 import pandas as pd
 from typing import Callable, Tuple, Dict
 from torch.utils.data import Dataset
@@ -31,10 +32,13 @@ class ETRIDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        text = self.dataset.iloc['text'][idx]
-        label = torch.tensor(self.label_dict[self.dataset.iloc['labels'][idx]])
-        wav_emb = self.audio_emb[idx][self.emb_type]
+        text = self.dataset['text'].iloc[idx]
         
+        label = torch.tensor(self.label_dict[self.dataset['labels'].iloc[idx]])
+        
+        emb_key = str(self.dataset.index[idx])
+        wav_emb = self.audio_emb[emb_key][self.emb_type]
+
         encoded_dict = self.tokenizer.encode_plus(text, return_tensors='pt', \
                             add_special_tokens=True, \
                             max_length=self.max_len, \

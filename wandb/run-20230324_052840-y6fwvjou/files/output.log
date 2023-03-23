@@ -1,0 +1,50 @@
+Some weights of the model checkpoint at klue/bert-base were not used when initializing BertModel: ['cls.seq_relationship.bias', 'cls.predictions.transform.LayerNorm.bias', 'cls.predictions.bias', 'cls.predictions.transform.dense.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.transform.LayerNorm.weight', 'cls.predictions.decoder.bias', 'cls.predictions.decoder.weight', 'cls.seq_relationship.weight']
+- This IS expected if you are initializing BertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing BertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+  0%|                                                                                                                | 0/20 [00:00<?, ?it/s]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+100%|████████████████████████████████████████████████████████████████████████████████| 145/145 [00:52<00:00,  3.46it/s, loss=0.424, lr=1e-5]
+
+  0%|                                                                                                                | 0/20 [00:57<?, ?it/s]
+Traceback (most recent call last):
+  File "main.py", line 108, in <module>
+    main()
+  File "main.py", line 105, in main
+    trainer.train()
+  File "/home/popul/work_dir/Emotion-Recognition-in-Conversation/trainer.py", line 29, in train
+    val_loss = self._validation()
+  File "/home/popul/work_dir/Emotion-Recognition-in-Conversation/trainer.py", line 103, in _validation
+    acc = self._accuracy_score(output_list, label_list)
+  File "/home/popul/work_dir/Emotion-Recognition-in-Conversation/trainer.py", line 132, in _accuracy_score
+    acc_score = multiclass_accuracy(logits, labels,
+  File "/home/popul/work_dir/venv/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/popul/work_dir/venv/lib/python3.8/site-packages/torcheval/metrics/functional/classification/accuracy.py", line 99, in multiclass_accuracy
+    _accuracy_param_check(average, num_classes, k)
+  File "/home/popul/work_dir/venv/lib/python3.8/site-packages/torcheval/metrics/functional/classification/accuracy.py", line 297, in _accuracy_param_check
+    raise ValueError(
+ValueError: `average` was not in the allowed value of ('micro', 'macro', 'none', None), got weighted.

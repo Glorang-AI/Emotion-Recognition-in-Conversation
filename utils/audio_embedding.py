@@ -1,3 +1,4 @@
+import gc
 import os
 import torch
 from tqdm import tqdm
@@ -21,13 +22,12 @@ def save_and_load(audio_model_path, audio_data_path_data, device, save_path):
                 }
             
         torch.save(emb_dict, save_path)
+        
+        del audio_encoder, feature_extractor, audio_input, outputs
+        torch.cuda.empty_cache()
+        gc.collect()
     
     else:
         emb_dict = torch.load(save_path)
     
     return emb_dict
-
-# def label_to_tensor(data):
-#     label_dict = {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6}
-#     data['labels'] = label_dict[data['labels']]
-#     return data
