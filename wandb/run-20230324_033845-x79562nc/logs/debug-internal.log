@@ -3488,3 +3488,87 @@
 2023-03-24 05:32:04,228 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
 2023-03-24 05:32:06,283 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
 2023-03-24 05:32:11,284 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:16,285 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:16,441 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:32:16,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:32:21,684 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:26,685 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:31,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:32:31,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:32:31,687 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:36,237 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:32:37,316 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:42,317 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:46,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:32:46,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:32:47,694 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:52,694 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:32:57,695 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:01,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:33:01,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:33:03,688 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:08,245 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:33:09,362 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:14,363 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:16,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:33:16,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:33:19,432 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:24,432 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:29,433 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:31,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:33:31,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:33:34,677 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:40,254 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:33:40,384 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:45,385 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:46,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:33:46,442 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:33:50,691 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:33:55,692 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:00,692 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:01,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:34:01,443 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:34:06,680 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:12,420 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:13,262 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:34:16,442 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:34:16,443 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:34:17,682 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:22,683 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:27,684 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:31,443 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:34:31,443 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:34:33,662 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:38,663 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:44,456 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:45,272 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:34:46,443 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:34:46,443 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:34:49,681 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:54,682 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:34:59,683 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:01,443 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:35:01,443 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:35:04,691 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:09,692 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:15,491 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:16,443 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:35:16,444 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:35:17,282 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:35:20,688 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:25,689 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:30,690 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:31,444 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:35:31,444 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:35:35,700 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:40,701 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:45,702 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:46,444 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:35:46,444 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:35:49,291 INFO    Thread-13 :736616 [dir_watcher.py:_on_file_modified():295] file/dir modified: /home/popul/work_dir/Emotion-Recognition-in-Conversation/wandb/run-20230324_033845-x79562nc/files/output.log
+2023-03-24 05:35:51,685 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:35:56,687 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:36:01,444 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: stop_status
+2023-03-24 05:36:01,444 DEBUG   SenderThread:736616 [sender.py:send_request():363] send_request: stop_status
+2023-03-24 05:36:01,698 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report
+2023-03-24 05:36:06,698 DEBUG   HandlerThread:736616 [handler.py:handle_request():144] handle_request: status_report

@@ -107,7 +107,7 @@ class ModelTrainer():
             'val_macro_f1_score':m_f1,
             'val_weighted_f1_score':w_f1,
             'val_accuracy':acc})
-        
+        print(f"val_loss:{val_epoch_loss} macro_f1_score:{m_f1}")
         return val_epoch_loss
 
     def _macro_f1_score(self, logit_list, label_list):
