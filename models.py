@@ -244,3 +244,264 @@ class RoCASEmodel(RobertaPreTrainedModel):
         attn_weights = F.softmax(attn_weights, -1)
         output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
         return output
+
+class CompressedCCEModel(BertPreTrainedModel):
+    def __init__(self, args, wav_config, bert_config):
+        super().__init__(bert_config)
+
+        self.args = args
+        self.wav_config = wav_config
+        self.text_config = bert_config
+
+        self.bert = BertModel.from_pretrained(args.lm_path)
+        self.cls = BertPreTrainingHeads(bert_config)
+        
+        self.audio_projection = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
+        self.text_projection = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+
+        self.compression_layer = nn.Linear(args.audio_max_len, args.context_max_len)
+        self.layer_norm = nn.LayerNorm(bert_config.hidden_size)
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, bert_config.hidden_size),
+            nn.GELU(),
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, args.num_labels)
+        )
+
+    def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
+
+        text_output = self.bert(input_ids, attention_mask, token_type_ids)[0]
+        speech_output = self.padding(speech_emb)
+
+        projected_text = self.text_projection(text_output)
+        projected_audio = self.audio_projection(speech_output)
+
+        transposed_audio = projected_audio.transpose(1, 2)
+        compressed_audio = self.compression_layer(transposed_audio)
+        compressed_audio = compressed_audio.transpose(1, 2)
+
+        addition_output = projected_text + compressed_audio
+        addition_output = self.layer_norm(addition_output)
+
+        prediction_scores = self.cls(addition_output)
+        pooled_output = addition_output.mean(dim=1)
+
+        class_logit = self.classifier(pooled_output)
+        
+        return {
+            "hidden_states": addition_output,
+            "pooled_output": pooled_output,
+            "class_logit": class_logit
+        }
+
+    def padding(self, speech_embedding):
+
+        batch_speech_embedding = torch.Tensor().to(self.args.device)
+
+        for se in speech_embedding:
+
+            se = se.unsqueeze(0)
+
+            sequence_length = se.size()[1]
+            if sequence_length >= self.args.audio_max_len:
+                se = se[:, :self.args.audio_max_len, :].to(self.args.device)
+            else:
+                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                se = torch.cat([se, pad], dim=1)
+            
+            batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
+        
+        return batch_speech_embedding
+    
+class ConcatModel(BertPreTrainedModel):
+    def __init__(self, args, wav_config, bert_config):
+        super().__init__(bert_config)
+
+        self.args = args
+        self.wav_config = wav_config
+        self.text_config = bert_config
+
+        self.bert = BertModel.from_pretrained(args.lm_path)
+        self.cls = BertPreTrainingHeads(bert_config)
+        
+        self.audio_projection = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
+        self.text_projection = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+
+        self.blend_layer = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+        self.layer_norm = nn.LayerNorm(bert_config.hidden_size)
+
+        self.classifier = nn.Sequential(
+            # nn.Dropout(),
+            # nn.Linear(bert_config.hidden_size, bert_config.hidden_size),
+            nn.GELU(),
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, args.num_labels)
+        )
+
+    def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
+
+        text_output = self.bert(input_ids, attention_mask, token_type_ids)[0]
+        speech_output = self.padding(speech_emb)
+
+        projected_text = self.text_projection(text_output)
+        projected_audio = self.audio_projection(speech_output)
+
+        concat_output = torch.cat([projected_text, projected_audio], dim=1)
+        
+        concat_output = self.blend_layer(concat_output)
+        concat_output = self.layer_norm(concat_output)
+
+        prediction_scores = self.cls(concat_output)
+        pooled_output = concat_output.mean(dim=1)
+
+        class_logit = self.classifier(pooled_output)
+        
+        return {
+            "hidden_states": concat_output,
+            "pooled_output": pooled_output,
+            "class_logit": class_logit
+        }
+
+    def padding(self, speech_embedding):
+
+        batch_speech_embedding = torch.Tensor().to(self.args.device)
+
+        for se in speech_embedding:
+
+            se = se.unsqueeze(0)
+
+            sequence_length = se.size()[1]
+            if sequence_length >= self.args.audio_max_len:
+                se = se[:, :self.args.audio_max_len, :].to(self.args.device)
+            else:
+                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                se = torch.cat([se, pad], dim=1)
+            
+            batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
+        
+        return batch_speech_embedding
+
+
+class MlpBlock(nn.Module):
+    def __init__(self,input_dim,dropout=0.3):
+        super().__init__()
+
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(input_dim,input_dim)
+        self.gelu = nn.GELU()
+        self.fc2 = nn.Linear(input_dim,input_dim)
+
+    def forward(self, x):
+        y = self.fc(x)
+        y = self.gelu(y)
+        y = self.fc2(y)
+        y = self.dropout(y)
+        return y
+
+
+class MixerBlock(nn.Module):
+    def __init__(self, input_dim, sequence_length,dropout=0.3):
+        super().__init__()
+        self.ln = nn.LayerNorm(input_dim)
+        self.modal_mixing = MlpBlock(input_dim,dropout)
+        self.sequence_mixing = MlpBlock(sequence_length,dropout)
+
+    def transpose(self,x):
+        return x.permute(0,2,1)
+
+    def forward(self, x):
+        y = self.ln(x)
+        y = self.transpose(y)
+        y = self.sequence_mixing(y)
+        y = self.transpose(y)
+        x = x + y
+        y = self.ln(y)
+        y = self.modal_mixing(y)
+        y = y+x
+        return y
+    
+class MultiModalMixer(BertPreTrainedModel):
+    def __init__(self, args, wav_config, bert_config):
+        super().__init__(bert_config)
+
+        mixer_config = {
+            'projection_dim' : 256,
+            'output_dim' : 512,
+            'num_blocks' : 1,
+            'dropout' : 0.1,
+        }
+        self.args = args
+        self.wav_config = wav_config
+        self.text_config = bert_config
+
+        self.bert = BertModel.from_pretrained(args.lm_path)
+        self.cls = BertPreTrainingHeads(bert_config)
+        
+        sequence_length = self.args.context_max_len + self.args.audio_max_len
+
+        self.audio_projection = nn.Linear(wav_config.hidden_size, mixer_config['projection_dim'])
+        self.text_projection = nn.Linear(bert_config.hidden_size, mixer_config['projection_dim'])
+
+        self.m_blocks = nn.ModuleList([
+            MixerBlock(mixer_config['projection_dim'], sequence_length, mixer_config['dropout']) for i in range(mixer_config['num_blocks'])
+        ])
+
+        self.ln = nn.LayerNorm(mixer_config['projection_dim'])
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(mixer_config['dropout']),
+            nn.Linear(mixer_config['projection_dim'], mixer_config['output_dim']),
+            nn.GELU(),
+            nn.Dropout(mixer_config['dropout']),
+            nn.Linear(mixer_config['output_dim'], args.num_labels)
+        )
+
+    def freeze(self):
+        self.bert.eval()
+
+    def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
+
+        text_output = self.bert(input_ids, attention_mask, token_type_ids)[0]
+        speech_output = self.padding(speech_emb)
+
+        projected_text = self.text_projection(text_output)
+        projected_audio = self.audio_projection(speech_output)
+
+        x = torch.cat([projected_text, projected_audio], dim=1)
+        
+        for block in self.m_blocks:
+            x = block(x)
+
+        x = self.ln(x)
+        pooled_output = x.mean(dim=1)
+
+        # prediction_scores = self.cls(concat_output)
+
+        class_logit = self.classifier(pooled_output)
+        
+        return {
+            "hidden_states": x,
+            "pooled_output": pooled_output,
+            "class_logit": class_logit
+        }
+
+    def padding(self, speech_embedding):
+
+        batch_speech_embedding = torch.Tensor().to(self.args.device)
+
+        for se in speech_embedding:
+
+            se = se.unsqueeze(0)
+
+            sequence_length = se.size()[1]
+            if sequence_length >= self.args.audio_max_len:
+                se = se[:, :self.args.audio_max_len, :].to(self.args.device)
+            else:
+                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                se = torch.cat([se, pad], dim=1)
+            
+            batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
+        
+        return batch_speech_embedding
