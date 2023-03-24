@@ -1,18 +1,23 @@
 import gc
 import os
 import torch
-from tqdm import tqdm
 import soundfile as sf
+
+from tqdm import tqdm
 from transformers import Wav2Vec2Model, Wav2Vec2FeatureExtractor
 
 def save_and_load(audio_model_path, audio_data_path_data, device, save_path):
+    
     if not os.path.isfile(save_path):
-        emb_dict=dict()
+        
         feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(audio_model_path)
         audio_encoder = Wav2Vec2Model.from_pretrained(audio_model_path)
         audio_encoder.to(device)
+
+        emb_dict=dict()
         for idx, audio_path in enumerate(tqdm(audio_data_path_data)):
-            sig, sr = sf.read(audio_path)
+            sig, sr = sf.read(os.path.join("data", audio_path)) 
+            
             audio_input = feature_extractor(sig, sampling_rate=sr, return_tensors='pt')['input_values'].to(device)
             outputs = audio_encoder(audio_input)
             

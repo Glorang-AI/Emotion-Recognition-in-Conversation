@@ -1,108 +1,146 @@
-import torch
+import os
 import wandb
+import argparse
 import pandas as pd
+
+import torch
 from torch import nn
-from dataset import ETRIDataset
-from trainer import ModelTrainer
 from torch.utils.data import DataLoader
-from utils import audio_embedding, seed
-from models import CASEmodel, RoCASEmodel
 from torch.nn.utils.rnn import pad_sequence
-from sklearn.model_selection import train_test_split
 from transformers import AdamW, Wav2Vec2Config, RobertaConfig, BertConfig, AutoTokenizer
 
-# Define a config dictionary object
-config = {
-  "lr": 1e-5,
-  "lm_path":'klue/bert-base',
-  "am_path": 'kresnik/wav2vec2-large-xlsr-korean',
-  "train_bsz": 64,
-  "val_bsz": 64,
-  "val_ratio":0.1,
-  "max_len": 128,
-  "epochs" :20,
-  "device":'cuda:2',
-  "num_labels":7,
-  "num_workers":4,
-  'data_path' : 'data/train.csv',
-  "label_dict": {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6},
-  "sav_dir":'save',
-  "base_score":0.45, # Save the model according to the base validation score.
-  'embedding_path':'data/emb_train.pt', # If an embedding file named "data/emb_train.pt" does not exist, generate one
-  "audio_emb_type": 'last_hidden_state', # audio embedding type: 'last_hidden_state' or 'extract_features'
-  "max_len" : 128,
-  "seed":42
-}
+from sklearn.model_selection import train_test_split
 
-def main():
-    seed.seed_setting(config['seed'])
+from dataset import ETRIDataset
+from trainer import ModelTrainer
+from models import CASEmodel, RoCASEmodel
+from utils import audio_embedding, seed
+
+def main(args):
+    seed.seed_setting(args.seed)
     
     # Pass the config dictionary when you initialize W&B
-    wandb.init(project='comp',
-            group='bert_cls',
-            name='case_audio_base',
-            config=config
+    wandb.init(project=args.wandb_project,
+            group=args.wandb_group,
+            entity=args.wandb_entity,
+            name=args.wandb_name,
+            config=args
     )
 
-    wav_config = Wav2Vec2Config.from_pretrained(wandb.config['am_path'])
-    bert_config = BertConfig.from_pretrained(wandb.config['lm_path'])
-    tokenizer = AutoTokenizer.from_pretrained(wandb.config['lm_path'])
+    wav_config = Wav2Vec2Config.from_pretrained(args.am_path)
+    bert_config = BertConfig.from_pretrained(args.lm_path)
+    tokenizer = AutoTokenizer.from_pretrained(args.lm_path)
 
     def text_audio_collator(batch):
        
-        
         return {'audio_emb' : pad_sequence([item['audio_emb'] for item in batch], batch_first=True),
                 'label' : torch.stack([item['label'] for item in batch]).squeeze(),
                 'input_ids' :  torch.stack([item['input_ids'] for item in batch]).squeeze(),
                 'attention_mask' :  torch.stack([item['attention_mask'] for item in batch]).squeeze(),
                 'token_type_ids' :  torch.stack([item['token_type_ids'] for item in batch]).squeeze()}
-                
-        # audio_emb = pad_sequence([item.pop('input_ids') for item in batch], batch_first=True)
-        return {'text_encoded':batch, 'audio_emb':audio_emb}
-        return {"label": label, "text_input": token, "audio_emb":audio_emb}
 
-    dataset = pd.read_csv(wandb.config['data_path'])
+    dataset = pd.read_csv(args.data_path)
     dataset.reset_index(inplace=True)
-    train_df, val_df = train_test_split(dataset, test_size = wandb.config['val_ratio'], random_state=config['seed'])
 
-    audio_emb = audio_embedding.save_and_load(wandb.config['am_path'], dataset['audio'].to_list(),
-                                                    'cuda:3',  # cuda is required to run the audio embedding generation model.
-                                                    wandb.config['embedding_path']) 
+    train_df, val_df = train_test_split(dataset, test_size = args.val_ratio, random_state=args.seed)
 
-    train_dataset = ETRIDataset(audio_embedding = audio_emb, 
-                                dataset=train_df, 
-                                label_dict = wandb.config['label_dict'],
-                                tokenizer = tokenizer,
-                                audio_emb_type = wandb.config['audio_emb_type'],
-                                max_len = wandb.config['max_len'], 
-                                )
+    # embedding path가 존재할 경우, 불러오며 없을 경우 생성한다.
+    audio_emb = audio_embedding.save_and_load(args.am_path, dataset['audio'].tolist(), args.device, args.embedding_path)
 
-    val_dataset = ETRIDataset(audio_embedding = audio_emb, 
-                            dataset=val_df, 
-                            label_dict = wandb.config['label_dict'],
-                            tokenizer = tokenizer,
-                            audio_emb_type = wandb.config['audio_emb_type'],
-                            max_len = wandb.config['max_len'], 
-                            )
+    label_dict = {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6}
+    train_dataset = ETRIDataset(
+        audio_embedding = audio_emb, 
+        dataset=train_df, 
+        label_dict = label_dict,
+        tokenizer = tokenizer,
+        audio_emb_type = args.audio_emb_type,
+        max_len = args.context_max_len, 
+        )
+    val_dataset = ETRIDataset(
+        audio_embedding = audio_emb, 
+        dataset=val_df, 
+        label_dict = label_dict,
+        tokenizer = tokenizer,
+        audio_emb_type = args.audio_emb_type,
+        max_len = args.context_max_len, 
+        )
 
     # Create a DataLoader that batches audio sequences and pads them to a fixed length
-    train_dataloader = DataLoader(train_dataset, batch_size=wandb.config['train_bsz'],
-                                shuffle=True, collate_fn=text_audio_collator, num_workers=wandb.config['num_workers'])
-    valid_dataloader = DataLoader(val_dataset, batch_size=wandb.config['val_bsz'],
-                                shuffle=False, collate_fn=text_audio_collator, num_workers=wandb.config['num_workers'])
+    train_dataloader = DataLoader(
+        train_dataset, 
+        batch_size=args.train_bsz,
+        shuffle=True, 
+        collate_fn=text_audio_collator, 
+        num_workers=args.num_workers,
+        )
+    valid_dataloader = DataLoader(
+        val_dataset, 
+        batch_size=args.valid_bsz,
+        shuffle=False, 
+        collate_fn=text_audio_collator, 
+        num_workers=args.num_workers,
+        )
 
     loss_fn=nn.CrossEntropyLoss()
-    model = CASEmodel(wandb.config['lm_path'], wav_config, bert_config, wandb.config['num_labels'])
-    optimizer = AdamW(model.parameters(),
-                        lr=1e-5,
-                        no_deprecation_warning=True)
-    wandb.config["num_labels"]
 
-    trainer = ModelTrainer(model, loss_fn, optimizer, wandb.config["device"], 
-                wandb.config["sav_dir"], train_dataloader, valid_dataloader, 
-                wandb.config["epochs"], wandb.config["base_score"], wandb.config["num_labels"])
+    if args.model == "CASE":
+        model = CASEmodel(args.lm_path, wav_config, bert_config, args.num_labels)
+
+    optimizer = AdamW(
+        model.parameters(),
+        lr=1e-5,
+        no_deprecation_warning=True
+        )
+
+    trainer = ModelTrainer(
+        args,
+        model, loss_fn, optimizer,
+        train_dataloader, valid_dataloader)
 
     trainer.train()
     
 if __name__ == "__main__":
-    main()
+
+    # Define a config dictionary object
+    parser = argparse.ArgumentParser()
+
+    # -- Choose Pretrained Model
+    parser.add_argument("--lm_path", type=str, default="klue/bert-base", help="You can choose models among (klue-bert series and klue-roberta series) (default: klue/bert-base")
+    parser.add_argument("--am_path", type=str, default="kresnik/wav2vec2-large-xlsr-korean")
+
+    # -- Training Argument
+    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--train_bsz", type=int, default=64)
+    parser.add_argument("--valid_bsz", type=int, default=256)
+    parser.add_argument("--val_ratio", type=float, default=0.2)
+    parser.add_argument("--context_max_len", type=int, default=128)
+    parser.add_argument("--audio_max_len", type=int, default=1024)
+    parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--num_labels", type=int, default=7)
+    parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
+    parser.add_argument("--model", type=str, default="CASE")
+    ## -- directory
+    parser.add_argument("--data_path", type=str, default="data/train.csv")
+    parser.add_argument("--save_path", type=str, default="save")
+    ###### emb_train에 대한 설명 부과하기
+    parser.add_argument("--embedding_path", type=str, default="data/emb_train.pt")
+
+    # -- utils
+    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--num_workers", type=int, default=4)
+    parser.add_argument("--seed", type=int, default=0)
+
+    # -- wandb
+    parser.add_argument("--wandb_project", type=str, default="comp")
+    parser.add_argument("--wandb_entity", type=str, default=None)
+    parser.add_argument("--wandb_group", type=str, default=None)
+    parser.add_argument("--wandb_name", type=str, default="case_audio_base")
+
+    args = parser.parse_args()
+
+    config = {
+    "label_dict": {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6},
+    "base_score":0.45, # Save the model according to the base validation score.
+    }
+
+    main(args)
