@@ -7,7 +7,14 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AdamW, Wav2Vec2Config, RobertaConfig, BertConfig, AutoTokenizer
+from transformers import (
+    AdamW, 
+    get_linear_schedule_with_warmup,
+    Wav2Vec2Config, 
+    RobertaConfig, 
+    BertConfig,
+    AutoTokenizer
+)
 
 from sklearn.model_selection import train_test_split
 
@@ -98,6 +105,15 @@ def main(args):
         lr=1e-5,
         no_deprecation_warning=True
         )
+    
+    scheduler = None
+    if args.scheduler == "linear":
+        total_steps = len(train_dataloader) * args.epochs
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps = total_steps * 0.1,
+            num_training_steps = total_steps
+        )
 
     contrastive_fn = None
     if args.contrastive:
@@ -107,6 +123,7 @@ def main(args):
         args,
         model, loss_fn, optimizer,
         train_dataloader, valid_dataloader,
+        scheduler = scheduler,
         contrastive_loss_fn = contrastive_fn)
 
     trainer.train()
@@ -128,6 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--context_max_len", type=int, default=128)
     parser.add_argument("--audio_max_len", type=int, default=1024)
     parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--scheduler", type=str, default=None)
     parser.add_argument("--num_labels", type=int, default=7)
     parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")

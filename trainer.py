@@ -11,7 +11,8 @@ class ModelTrainer():
     
     def __init__(self, args, 
                  model, loss_fn, optimizer,  
-                 train_dataloader, valid_dataloader=None, contrastive_loss_fn = None,
+                 train_dataloader, valid_dataloader=None, 
+                 scheduler = None, contrastive_loss_fn = None,
                  base_score:float=0.45):
         
         self.args = args # args: device, loss_fn, optimizer, save_dir
@@ -20,7 +21,7 @@ class ModelTrainer():
         self.loss_fn = loss_fn
         self.contrastive_loss_fn = contrastive_loss_fn
         self.optimizer = optimizer
-        # self.lr_scheduler = lr_scheduler
+        self.scheduler = scheduler
 
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
@@ -40,7 +41,7 @@ class ModelTrainer():
                 if not os.path.exists(self.args.save_path):
                     os.makedirs(self.args.save_path)
 
-                torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model_{self.args.contrastive}.pt')
+                torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model_shceduler-{self.args.scheduler}_{self.args.contrastive}.pt')
                 print(f'{epoch}epoch Model saved..!')
         
         torch.cuda.empty_cache()
@@ -85,7 +86,9 @@ class ModelTrainer():
             loss.backward()
 
             self.optimizer.step()
-            
+            if self.scheduler:
+                self.scheduler.step()
+
             step_loss = loss.detach().cpu().item()
             train_epoch_loss += step_loss
 
