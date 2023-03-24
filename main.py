@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 
 from dataset import ETRIDataset
 from trainer import ModelTrainer
-from models import CASEmodel, RoCASEmodel
+from models import CASEmodel, RoCASEmodel, CompressedCCEModel, ConcatModel, MultiModalMixer
 from utils import audio_embedding, seed
 
 def main(args):
@@ -85,6 +85,13 @@ def main(args):
 
     if args.model == "CASE":
         model = CASEmodel(args.lm_path, wav_config, bert_config, args.num_labels)
+    elif args.model == "CCE":
+        model = CompressedCCEModel(args, wav_config, bert_config)
+    elif args.model == "Concat":
+        model = ConcatModel(args, wav_config, bert_config)
+    elif args.model == "MMM":
+        model = MultiModalMixer(args, wav_config, bert_config)
+        model.freeze()
 
     optimizer = AdamW(
         model.parameters(),
@@ -92,10 +99,15 @@ def main(args):
         no_deprecation_warning=True
         )
 
+    contrastive_fn = None
+    if args.contrastive:
+        contrastive_fn = nn.BCEWithLogitsLoss()
+
     trainer = ModelTrainer(
         args,
         model, loss_fn, optimizer,
-        train_dataloader, valid_dataloader)
+        train_dataloader, valid_dataloader,
+        contrastive_loss_fn = contrastive_fn)
 
     trainer.train()
     
@@ -119,6 +131,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_labels", type=int, default=7)
     parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")
+    parser.add_argument("--contrastive", type=bool, default=False)
+
     ## -- directory
     parser.add_argument("--data_path", type=str, default="data/train.csv")
     parser.add_argument("--save_path", type=str, default="save")

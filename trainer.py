@@ -1,20 +1,24 @@
 import os
 import torch
 import wandb
+
 from tqdm import tqdm, trange
 from torcheval.metrics.functional import multiclass_f1_score, multiclass_accuracy
+
+from utils.contrastive import contrastive_set
 
 class ModelTrainer():
     
     def __init__(self, args, 
-                 model, loss_fn, optimizer, 
-                 train_dataloader, valid_dataloader=None, 
+                 model, loss_fn, optimizer,  
+                 train_dataloader, valid_dataloader=None, contrastive_loss_fn = None,
                  base_score:float=0.45):
         
         self.args = args # args: device, loss_fn, optimizer, save_dir
         
         self.model = model
         self.loss_fn = loss_fn
+        self.contrastive_loss_fn = contrastive_loss_fn
         self.optimizer = optimizer
         # self.lr_scheduler = lr_scheduler
 
@@ -36,7 +40,7 @@ class ModelTrainer():
                 if not os.path.exists(self.args.save_path):
                     os.makedirs(self.args.save_path)
 
-                torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model.pt')
+                torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model_{self.args.contrastive}.pt')
                 print(f'{epoch}epoch Model saved..!')
         
         torch.cuda.empty_cache()
@@ -66,9 +70,18 @@ class ModelTrainer():
                 attention_mask,
                 token_type_ids,
                 audio_tensor 
-                )['class_logit']
+                )
             
-            loss = self.loss_fn(output, label)
+            logit = output['class_logit']
+            loss = self.loss_fn(logit, label)
+
+            if self.args.contrastive:
+                pooled_output = output['pooled_output']
+
+                contrastive_value, contrastive_label = contrastive_set(pooled_output, label)
+                contrastive_loss = self.contrastive_loss_fn(contrastive_value, contrastive_label)
+                loss += 0.1 * contrastive_loss
+
             loss.backward()
 
             self.optimizer.step()
@@ -78,7 +91,7 @@ class ModelTrainer():
 
             wandb.log({'loss':step_loss})
             
-            output_list.append(output.detach().cpu())
+            output_list.append(logit.detach().cpu())
             label_list.append(label.detach().cpu())
 
             pbar.set_postfix({'loss': step_loss, 
