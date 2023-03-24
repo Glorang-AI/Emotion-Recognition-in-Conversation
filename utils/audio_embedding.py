@@ -4,6 +4,7 @@ import torch
 import soundfile as sf
 
 from tqdm import tqdm
+from torch.nn.utils.rnn import pad_sequence
 from transformers import Wav2Vec2Model, Wav2Vec2FeatureExtractor
 
 def save_and_load(audio_model_path, audio_data_path_data, device, save_path):

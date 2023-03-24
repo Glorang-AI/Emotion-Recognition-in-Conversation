@@ -171,7 +171,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = {
-    "label_dict": {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6},
     "base_score":0.45, # Save the model according to the base validation score.
     }
 
