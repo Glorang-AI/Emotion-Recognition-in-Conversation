@@ -23,7 +23,6 @@ from trainer import ModelTrainer
 from models import (
     CompressedCASEModel,
     CASEmodel, 
-    RoCASEmodel, 
     CompressedCCEModel, 
     CompressedCCEModel_V2,
     ConcatModel, 
@@ -60,7 +59,8 @@ def main(args):
     # embedding path가 존재할 경우, 불러오며 없을 경우 생성한다.
     audio_emb = audio_embedding.save_and_load(args.am_path, dataset['audio'].tolist(), args.device, args.embedding_path)
     label_dict = {'angry':0, 'neutral':1, 'sad':2, 'happy':3, 'disqust':4, 'surprise':5, 'fear':6}
-
+    pet_label_dict = {'angry':'분노', 'neutral':'중립', 'sad':'슬픔', 'happy':'행복', 'disqust':'불쾌', 'surprise':'경이', 'fear':'공포'}
+    
     if args.val_ratio != 0:
         train_df, val_df = train_test_split(dataset, test_size = args.val_ratio, random_state=args.seed)
         
@@ -71,7 +71,9 @@ def main(args):
             tokenizer = tokenizer,
             audio_emb_type = args.audio_emb_type,
             max_len = args.context_max_len, 
+            pet=args.pet
             )
+        
         val_dataset = ETRIDataset(
             audio_embedding = audio_emb, 
             dataset=val_df, 
@@ -79,6 +81,7 @@ def main(args):
             tokenizer = tokenizer,
             audio_emb_type = args.audio_emb_type,
             max_len = args.context_max_len, 
+            pet=args.pet
             )
 
         # Create a DataLoader that batches audio sequences and pads them to a fixed length
@@ -89,6 +92,7 @@ def main(args):
             collate_fn=text_audio_collator, 
             num_workers=args.num_workers,
             )
+        
         valid_dataloader = DataLoader(
             val_dataset, 
             batch_size=args.valid_bsz,
@@ -98,7 +102,6 @@ def main(args):
             )
 
     else:
-
         train_dataset = ETRIDataset(
             audio_embedding = audio_emb, 
             dataset=dataset, 
@@ -106,6 +109,7 @@ def main(args):
             tokenizer = tokenizer,
             audio_emb_type = args.audio_emb_type,
             max_len = args.context_max_len, 
+            pet=args.pet
             )
 
         # Create a DataLoader that batches audio sequences and pads them to a fixed length
@@ -130,6 +134,7 @@ def main(args):
         tokenizer = tokenizer,
         audio_emb_type = args.audio_emb_type,
         max_len = args.context_max_len, 
+        pet=args.pet
         )
     
     test_dataloader = DataLoader(
@@ -182,6 +187,7 @@ def main(args):
             model, loss_fn, optimizer,
             train_dataloader, valid_dataloader, test_dataloader,
             scheduler = scheduler,
+            verbalizer_value=list(pet_label_dict.values()) if args.pet else None,
             contrastive_loss_fn = contrastive_fn)
     else:
         trainer = ModelTrainer(
@@ -189,8 +195,9 @@ def main(args):
             model, loss_fn, optimizer,
             train_dataloader, valid_dataloader=None, test_dataloader=test_dataloader,
             scheduler = scheduler,
+            verbalizer_value=list(pet_label_dict.values()) if args.pet else None,
             contrastive_loss_fn = contrastive_fn)
-            
+    
     trainer.train()
     
 if __name__ == "__main__":
@@ -232,6 +239,9 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_entity", type=str, default=None)
     parser.add_argument("--wandb_group", type=str, default=None)
     parser.add_argument("--wandb_name", type=str, default="case_audio_base")
+    
+    # -- train mode(PET or ORG)
+    parser.add_argument("--pet", type=bool, default=False)
 
     args = parser.parse_args()
 
@@ -240,3 +250,4 @@ if __name__ == "__main__":
     }
 
     main(args)
+    
