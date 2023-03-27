@@ -11,7 +11,7 @@ class ModelTrainer():
     
     def __init__(self, args, 
                  model, loss_fn, optimizer,  
-                 train_dataloader, valid_dataloader=None, 
+                 train_dataloader, valid_dataloader=None, test_dataloader=None,
                  scheduler = None, contrastive_loss_fn = None,
                  base_score:float=0.45):
         
@@ -25,6 +25,7 @@ class ModelTrainer():
 
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
+        self.test_dataloader = test_dataloader
         
         self.base_score = base_score
         
@@ -34,18 +35,26 @@ class ModelTrainer():
             
             self._train() # Train
 
-            val_loss = self._validation() # Validation
-            if self.base_score >= val_loss:
+            if self.args.val_ratio:
+                val_loss = self._validation() # Validation
 
-                self.base_score=val_loss
-                if not os.path.exists(self.args.save_path):
-                    os.makedirs(self.args.save_path)
+            self._test()
 
-                torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model_shceduler-{self.args.scheduler}_{self.args.contrastive}.pt')
-                print(f'{epoch}epoch Model saved..!')
+            # if self.base_score >= val_loss:
+
+            #     self.base_score=val_loss
+            #     if not os.path.exists(self.args.save_path):
+            #         os.makedirs(self.args.save_path)
+
+            #     torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model_shceduler-{self.args.scheduler}_{self.args.contrastive}.pt')
+            #     print(f'{epoch}epoch Model saved..!')
         
         torch.cuda.empty_cache()
-        del self.model, self.train_dataloader, self.valid_dataloader
+
+        if self.args.val_ratio:
+            del self.model, self.train_dataloader, self.valid_dataloader
+        else:
+            del self.model, self.train_dataloader
     
     def _train(self):
         # Train
@@ -159,6 +168,44 @@ class ModelTrainer():
         print(f"Valid Loss: {val_epoch_loss: .4f} \nValid Acc: {acc :.4f} \nValid Macro-F1: {m_f1:.4f} \nValid Weighted-F1: {w_f1:.4f}")
         
         return val_epoch_loss
+
+    def _test(self):
+        # Validation
+        self.model.eval()
+
+        output_list=[]
+        label_list=[]
+        with torch.no_grad():
+
+            pbar=tqdm(self.test_dataloader)
+            for step, batch in enumerate(pbar):
+
+                label = batch['label'].to(self.args.device)
+                audio_tensor = batch['audio_emb'].to(self.args.device)
+                
+                input_ids = batch["input_ids"].to(self.args.device)
+                attention_mask = batch["attention_mask"].to(self.args.device)
+                token_type_ids = batch["token_type_ids"].to(self.args.device)
+                
+                output = self.model(
+                    input_ids, 
+                    attention_mask,
+                    token_type_ids,
+                    audio_tensor 
+                    )['class_logit']
+                
+                output_list.append(output.detach().cpu())
+                label_list.append(label.detach().cpu())
+
+        m_f1 = self._macro_f1_score(output_list, label_list)
+        w_f1 = self._weighted_f1_score(output_list, label_list)
+        acc = self._accuracy_score(output_list, label_list)
+
+        wandb.log({'test_macro_f1_score':m_f1,
+                   'test_weighted_f1_score':w_f1,
+                   'test_accuracy':acc})
+                
+        # return val_epoch_loss
 
     def _macro_f1_score(self, logit_list, label_list):
         logits = torch.cat(logit_list)
