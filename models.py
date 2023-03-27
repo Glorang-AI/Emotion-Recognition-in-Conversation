@@ -245,6 +245,88 @@ class RoCASEmodel(RobertaPreTrainedModel):
         output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
         return output
 
+class CompressedCASEModel(BertPreTrainedModel):
+    def __init__(self, args, wav_config, bert_config):
+        super().__init__(bert_config)
+
+        self.args = args
+        self.wav_config = wav_config
+        self.text_config = bert_config
+
+        self.bert = BertModel.from_pretrained(args.lm_path)
+        self.cls = BertPreTrainingHeads(bert_config)
+        
+        self.audio_projection = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
+        # self.text_projection = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+
+        self.compression_layer = nn.Linear(args.audio_max_len, args.context_max_len)
+        self.layer_norm = nn.LayerNorm(bert_config.hidden_size)
+        self.dense = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, bert_config.hidden_size),
+            nn.GELU(),
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, args.num_labels)
+        )
+
+    def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
+
+        text_output = self.bert(input_ids, attention_mask, token_type_ids)[0]
+        speech_output = self.padding(speech_emb)
+
+        # projected_text = self.text_projection(text_output)
+        projected_audio = self.audio_projection(speech_output)
+
+        transposed_audio = projected_audio.transpose(1, 2)
+        compressed_audio = self.compression_layer(transposed_audio)
+        compressed_audio = compressed_audio.transpose(1, 2)
+
+        att_emb = self.dot_attention(text_output, compressed_audio, compressed_audio)
+        sequence_output = text_output + att_emb
+
+        sequence_output = self.layer_norm(sequence_output)
+        sequence_output = self.dense(sequence_output)
+
+        # prediction_scores = self.cls(sequence_output)
+        pooled_output = sequence_output.mean(dim=1)
+
+        class_logit = self.classifier(pooled_output)
+        
+        return {
+            "hidden_states": sequence_output,
+            "pooled_output": pooled_output,
+            "class_logit": class_logit
+        }
+
+    def padding(self, speech_embedding):
+
+        batch_speech_embedding = torch.Tensor().to(self.args.device)
+
+        for se in speech_embedding:
+
+            se = se.unsqueeze(0)
+
+            sequence_length = se.size()[1]
+            if sequence_length >= self.args.audio_max_len:
+                se = se[:, :self.args.audio_max_len, :].to(self.args.device)
+            else:
+                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                se = torch.cat([se, pad], dim=1)
+            
+            batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
+        
+        return batch_speech_embedding
+    
+    def dot_attention(self, q, k, v):
+        # q: [bs, poly_m, dim] or [bs, res_cnt, dim]
+        # k=v: [bs, length, dim] or [bs, poly_m, dim]
+        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, poly_m, length]
+        attn_weights = F.softmax(attn_weights, -1)
+        output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
+        return output
+
 class CompressedCCEModel(BertPreTrainedModel):
     def __init__(self, args, wav_config, bert_config):
         super().__init__(bert_config)
@@ -261,6 +343,7 @@ class CompressedCCEModel(BertPreTrainedModel):
 
         self.compression_layer = nn.Linear(args.audio_max_len, args.context_max_len)
         self.layer_norm = nn.LayerNorm(bert_config.hidden_size)
+        # self.dense = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
 
         self.classifier = nn.Sequential(
             nn.Dropout(),
@@ -284,8 +367,81 @@ class CompressedCCEModel(BertPreTrainedModel):
 
         addition_output = projected_text + compressed_audio
         addition_output = self.layer_norm(addition_output)
+        # addition_output = self.dense(addition_output)
 
-        prediction_scores = self.cls(addition_output)
+        # prediction_scores = self.cls(addition_output)
+        pooled_output = addition_output.mean(dim=1)
+
+        class_logit = self.classifier(pooled_output)
+        
+        return {
+            "hidden_states": addition_output,
+            "pooled_output": pooled_output,
+            "class_logit": class_logit
+        }
+
+    def padding(self, speech_embedding):
+
+        batch_speech_embedding = torch.Tensor().to(self.args.device)
+
+        for se in speech_embedding:
+
+            se = se.unsqueeze(0)
+
+            sequence_length = se.size()[1]
+            if sequence_length >= self.args.audio_max_len:
+                se = se[:, :self.args.audio_max_len, :].to(self.args.device)
+            else:
+                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                se = torch.cat([se, pad], dim=1)
+            
+            batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
+        
+        return batch_speech_embedding
+    
+class CompressedCCEModel_V2(BertPreTrainedModel):
+    def __init__(self, args, wav_config, bert_config):
+        super().__init__(bert_config)
+
+        self.args = args
+        self.wav_config = wav_config
+        self.text_config = bert_config
+
+        self.bert = BertModel.from_pretrained(args.lm_path)
+        self.cls = BertPreTrainingHeads(bert_config)
+        
+        self.audio_projection = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
+        # self.text_projection = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+
+        self.compression_layer = nn.Linear(args.audio_max_len, args.context_max_len)
+        self.layer_norm = nn.LayerNorm(bert_config.hidden_size)
+        self.dense = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, bert_config.hidden_size),
+            nn.GELU(),
+            nn.Dropout(),
+            nn.Linear(bert_config.hidden_size, args.num_labels)
+        )
+
+    def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
+
+        text_output = self.bert(input_ids, attention_mask, token_type_ids)[0]
+        speech_output = self.padding(speech_emb)
+
+        # projected_text = self.text_projection(text_output)
+        projected_audio = self.audio_projection(speech_output)
+
+        transposed_audio = projected_audio.transpose(1, 2)
+        compressed_audio = self.compression_layer(transposed_audio)
+        compressed_audio = compressed_audio.transpose(1, 2)
+
+        addition_output = text_output + compressed_audio
+        addition_output = self.layer_norm(addition_output)
+        addition_output = self.dense(addition_output)
+        
+        # prediction_scores = self.cls(addition_output)
         pooled_output = addition_output.mean(dim=1)
 
         class_logit = self.classifier(pooled_output)
