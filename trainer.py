@@ -75,12 +75,15 @@ class ModelTrainer():
             attention_mask = batch["attention_mask"].to(self.args.device)
             token_type_ids = batch["token_type_ids"].to(self.args.device)
             
-            output = self.model(
-                input_ids, 
-                attention_mask,
-                token_type_ids,
-                audio_tensor 
-                )
+            if self.args.model == "speech_only":
+                output = self.model(audio_tensor)
+            else:
+                output = self.model(
+                    input_ids, 
+                    attention_mask,
+                    token_type_ids,
+                    audio_tensor 
+                    )
             
             logit = output['class_logit']
             loss = self.loss_fn(logit, label)
@@ -187,12 +190,15 @@ class ModelTrainer():
                 attention_mask = batch["attention_mask"].to(self.args.device)
                 token_type_ids = batch["token_type_ids"].to(self.args.device)
                 
-                output = self.model(
-                    input_ids, 
-                    attention_mask,
-                    token_type_ids,
-                    audio_tensor 
-                    )['class_logit']
+                if self.args.model == "speech_only":
+                    output = self.model(audio_tensor)['class_logit']
+                else:
+                    output = self.model(
+                        input_ids, 
+                        attention_mask,
+                        token_type_ids,
+                        audio_tensor 
+                        )['class_logit']
                 
                 output_list.append(output.detach().cpu())
                 label_list.append(label.detach().cpu())

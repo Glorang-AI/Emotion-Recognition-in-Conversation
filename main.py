@@ -27,9 +27,11 @@ from models import (
     CompressedCCEModel, 
     CompressedCCEModel_V2,
     ConcatModel, 
-    MultiModalMixer
+    MultiModalMixer,
+    TextOnlyModel,
+    SpeechOnlyModel,
 )
-from utils import audio_embedding, seed
+from utils import audio_embedding, seed, loss
 
 def main(args):
     seed.seed_setting(args.seed)
@@ -141,7 +143,10 @@ def main(args):
         )
     
     ####################
-    loss_fn=nn.CrossEntropyLoss()
+    if args.loss == "focal":
+        loss_fn = loss.FocalLoss(gamma = args.gamma)
+    else:
+        loss_fn=nn.CrossEntropyLoss()
 
     if args.model == "CCASE":
         model = CompressedCASEModel(args, wav_config, bert_config)
@@ -156,6 +161,10 @@ def main(args):
     elif args.model == "MMM":
         model = MultiModalMixer(args, wav_config, bert_config)
         model.freeze()
+    elif args.model == "text_only":
+        model = TextOnlyModel(args, bert_config)
+    elif args.model == "speech_only":
+        model = SpeechOnlyModel(args, bert_config, wav_config)
 
     optimizer = AdamW(
         model.parameters(),
@@ -215,7 +224,9 @@ if __name__ == "__main__":
     parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")
     parser.add_argument("--contrastive", type=bool, default=False)
-
+    parser.add_argument("--loss", type=str, default="crossentropy")
+    parser.add_argument("--gamma", type=float, default=1.0, help="focalloss's gamma argument")
+    
     ## -- directory
     parser.add_argument("--data_path", type=str, default="data/train.csv")
     parser.add_argument("--save_path", type=str, default="save")
