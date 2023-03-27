@@ -3,3 +3,5 @@ data/
 wav/
 wandb/
 __pycache__/
+save/
+*.pyc

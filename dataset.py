@@ -21,6 +21,7 @@ class ETRIDataset(Dataset):
                  audio_emb_type:str='last_hidden_state', # audio embedding type: 'last_hidden_state' or 'extract_features'
                  max_len:int=128):
         super().__init__()
+        
         self.audio_emb = audio_embedding
         self.dataset = dataset
         self.max_len = max_len
@@ -39,13 +40,15 @@ class ETRIDataset(Dataset):
         emb_key = str(self.dataset.index[idx])
         wav_emb = self.audio_emb[emb_key][self.emb_type]
 
-        encoded_dict = self.tokenizer.encode_plus(text, return_tensors='pt', \
-                            add_special_tokens=True, \
-                            max_length=self.max_len, \
-                            padding='max_length', \
-                            truncation=True, \
-                            return_attention_mask=True, \
-                            return_token_type_ids=True)
+        encoded_dict = self.tokenizer(text, 
+                                      return_tensors='pt',
+                                      add_special_tokens=True,
+                                      max_length=self.max_len,
+                                      padding='max_length',
+                                      truncation=True,
+                                      return_attention_mask=True,
+                                      return_token_type_ids=True
+                                      )
         
         encoded_dict['audio_emb'] = wav_emb
         encoded_dict['label'] = label
