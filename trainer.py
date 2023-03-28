@@ -13,7 +13,7 @@ class ModelTrainer():
                  model, loss_fn, optimizer,  
                  train_dataloader, valid_dataloader=None, test_dataloader=None,
                  scheduler = None, contrastive_loss_fn = None,
-                 verbalizer_value=None,
+                 label_dict=None, verbalizer_value=None,
                  base_score:float=0.45):
         
         self.args = args # args: device, loss_fn, optimizer, save_dir
@@ -29,7 +29,9 @@ class ModelTrainer():
         self.test_dataloader = test_dataloader
         
         self.base_score = base_score
-        self.verbalizer_value = verbalizer_value
+        self.verbalizer_value = list(verbalizer_value.values())
+        self.label_dict = label_dict
+        self.neutral_label = label_dict['neutral']
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.args.lm_path)
         
@@ -131,14 +133,17 @@ class ModelTrainer():
         
         train_epoch_loss /= (step+1)
         m_f1 = self._macro_f1_score(output_list, label_list)
+        mic_f1 = self._micro_f1_score(output_list, label_list)
         w_f1 = self._weighted_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
         
         wandb.log({'train_macro_f1_score':m_f1,
                    'train_weighted_f1_score':w_f1,
+                   'train_micro_f1_score':mic_f1,
                    'train_accuracy':acc})
-        
-        print(f"Train Loss: {train_epoch_loss: .4f} \nTrain Acc: {acc :.4f} \nTrain Macro-F1: {m_f1:.4f} \nTrain Weighted-F1: {w_f1:.4f}")
+
+        print(f"Train Loss: {train_epoch_loss: .4f} \nTrain Acc: {acc :.4f} \
+            \nTrain Macro-F1: {m_f1:.4f} \nTrain Weighted-F1: {w_f1:.4f} \nTrain Micro-F1: {mic_f1:.4f}")
 
         pbar.close()
         
@@ -191,6 +196,7 @@ class ModelTrainer():
         
         m_f1 = self._macro_f1_score(output_list, label_list)
         w_f1 = self._weighted_f1_score(output_list, label_list)
+        mic_f1 = self._micro_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
 
         val_epoch_loss /= (step+1)
@@ -198,9 +204,14 @@ class ModelTrainer():
         wandb.log({'val_epoch_loss':val_epoch_loss,
                    'val_macro_f1_score':m_f1,
                    'val_weighted_f1_score':w_f1,
+                   'val_micro_f1_score':mic_f1,
                    'val_accuracy':acc})
         
-        print(f"Valid Loss: {val_epoch_loss: .4f} \nValid Acc: {acc :.4f} \nValid Macro-F1: {m_f1:.4f} \nValid Weighted-F1: {w_f1:.4f}")
+        y_pred = torch.cat(output_list)
+        y_test = torch.cat(label_list)
+        
+        print(f"Valid Loss: {val_epoch_loss: .4f} \nValid Acc: {acc :.4f} \
+              \nValid Macro-F1: {m_f1:.4f} \nValid Weighted-F1: {w_f1:.4f} \nValid Micro-F1: {mic_f1:.4f}")
         
         return val_epoch_loss
 
@@ -248,12 +259,20 @@ class ModelTrainer():
 
         m_f1 = self._macro_f1_score(output_list, label_list)
         w_f1 = self._weighted_f1_score(output_list, label_list)
+        mic_f1 = self._micro_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
 
         wandb.log({'test_macro_f1_score':m_f1,
                    'test_weighted_f1_score':w_f1,
+                   'test_micro_f1_score':mic_f1,
                    'test_accuracy':acc})
-                
+        
+        labels = list(self.label_dict.keys())
+        y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
+        y_test = torch.cat(label_list).tolist()
+        wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
+                                                                  preds = y_pred, class_names=labels)})
+        wandb.save(os.path.join(csv_path, f"logs-{wandb.run.id}.csv"))
         # return val_epoch_loss
 
     def _macro_f1_score(self, logit_list, label_list):
@@ -271,6 +290,18 @@ class ModelTrainer():
                                          num_classes=self.args.num_labels, 
                                          average="weighted").detach().cpu().item()
         return w_f1_score
+    
+    def _micro_f1_score(self, logit_list, label_list):
+        labels = torch.cat(label_list)
+        label_pos =torch.where(labels!=self.neutral_label)
+        
+        labels = labels[label_pos]
+        logits = torch.cat(logit_list)[label_pos]
+        logits = torch.argmax(logits, dim=1)
+        micro_f1_score = multiclass_f1_score(logits, labels, 
+                                         average="micro").detach().cpu().item()
+        return micro_f1_score
+    
     
     def _accuracy_score(self, logit_list, label_list):
         logits = torch.cat(logit_list)
