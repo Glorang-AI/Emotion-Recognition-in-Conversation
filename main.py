@@ -187,7 +187,8 @@ def main(args):
             model, loss_fn, optimizer,
             train_dataloader, valid_dataloader, test_dataloader,
             scheduler = scheduler,
-            verbalizer_value=list(pet_label_dict.values()) if args.pet else None,
+            verbalizer_value=pet_label_dict,
+            label_dict = label_dict,
             contrastive_loss_fn = contrastive_fn)
     else:
         trainer = ModelTrainer(
@@ -195,7 +196,8 @@ def main(args):
             model, loss_fn, optimizer,
             train_dataloader, valid_dataloader=None, test_dataloader=test_dataloader,
             scheduler = scheduler,
-            verbalizer_value=list(pet_label_dict.values()) if args.pet else None,
+            verbalizer_value=pet_label_dict if args.pet else None,
+            label_dict = label_dict,
             contrastive_loss_fn = contrastive_fn)
     
     trainer.train()
