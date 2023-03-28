@@ -272,8 +272,7 @@ class ModelTrainer():
         y_test = torch.cat(label_list).tolist()
         wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
                                                                   preds = y_pred, class_names=labels)})
-        wandb.save(os.path.join(csv_path, f"logs-{wandb.run.id}.csv"))
-        # return val_epoch_loss
+
 
     def _macro_f1_score(self, logit_list, label_list):
         logits = torch.cat(logit_list)
