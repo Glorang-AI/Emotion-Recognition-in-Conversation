@@ -102,12 +102,12 @@ class CASEmodel(BertPreTrainedModel):
         
         pooled_output = self.pooler(torch.sum(sequence_output, dim=1))
         class_logit = self.classifier(pooled_output)
-        # prediction_scores = self.cls(sequence_output)
+        prediction_scores = self.cls(sequence_output)
 
         return {
             'hidden_states':sequence_output,
             'pooled_output':pooled_output,
-            # 'prediction_scores':prediction_scores,
+            'prediction_scores':prediction_scores,
             'class_logit':class_logit
         }
 
@@ -118,37 +118,6 @@ class CASEmodel(BertPreTrainedModel):
         attn_weights = F.softmax(attn_weights, -1)
         output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
         return output
-
-class ORGmodel(BertPreTrainedModel):
-    """
-    Contextual Acoustic Speech Embedding (CASE) model
-    """
-    def __init__(self, bert_pth, wav_config, bert_config, *inputs, **kwargs):
-        super().__init__(bert_config)
-
-        self.bert = BertModel.from_pretrained(bert_pth)
-            
-        self.cls = BertPreTrainingHeads(bert_config)
-        self.convert_dim = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
-        self.dense = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
-        self.LayerNorm = nn.LayerNorm(bert_config.hidden_size, eps=bert_config.layer_norm_eps)
-        
-        self.pooler = nn.Sequential(
-            nn.Linear(bert_config.hidden_size, bert_config.hidden_size),
-            nn.Tanh()
-        )
-        
-    def forward(self, input_ids, attention_mask,
-                token_type_ids=None):
-        sequence_output = self.bert(input_ids, attention_mask, token_type_ids)[0]
-        pooled_output = self.pooler(torch.sum(sequence_output, dim=1))
-        prediction_scores = self.cls(sequence_output)
-
-        return {
-            'hidden_states':sequence_output,
-            'pooled_output':pooled_output,
-            'prediction_scores':prediction_scores
-        }
 
 class CLSmodel(nn.Module):
     def __init__(self, num_labels, config):
@@ -171,79 +140,6 @@ class CLSmodel(nn.Module):
         x = self.out_proj(x)
         
         return x
-
-# class NCLSmodel(nn.Module):
-#     def __init__(self, num_labels, config):
-#         super().__init__()
-#         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-#         classifier_dropout = (
-#             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
-#         )
-#         self.dropout = nn.Dropout(classifier_dropout)
-#         self.activation = nn.Tanh()
-#         self.out_proj = nn.Linear(config.hidden_size, num_labels)
-    
-#     def forward(self, pooler_output):
-#         x = self.dropout(pooler_output)
-#         x = self.dense(x)
-#         x = self.activation(x)
-#         x = self.dropout(x)
-#         x = self.out_proj(x)
-        
-#         return x
-    
-class RoCASEmodel(RobertaPreTrainedModel):
-    """
-    Contextual Acoustic Speech Embedding (CASE) model
-    """
-    def __init__(self, bert_pth, wav_config, bert_config, num_labels, *inputs, **kwargs):
-        super().__init__(bert_config)
-
-        self.roberta = RobertaModel.from_pretrained(bert_pth)
-        
-        self.lm_head = RobertaLMHead(bert_config)
-        self.convert_dim = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
-        self.dense = nn.Linear(bert_config.hidden_size, bert_config.hidden_size)
-        self.LayerNorm = nn.LayerNorm(bert_config.hidden_size, eps=bert_config.layer_norm_eps)
-        
-        self.pooler = nn.Sequential(
-            nn.Linear(bert_config.hidden_size, bert_config.hidden_size),
-            nn.Tanh()
-        )
-        self.classifier = CLSmodel(num_labels, bert_config)
-        
-    def forward(self, input_ids, attention_mask,
-                token_type_ids, speech_emb=None):
-        
-        context_emb = self.roberta(input_ids, attention_mask, token_type_ids)[0]
-        
-        if speech_emb != None:
-            speech_emb = self.convert_dim(speech_emb)            
-            att_emb = self.dot_attention(context_emb, speech_emb, speech_emb)
-            sequence_output = context_emb + att_emb
-            sequence_output = self.LayerNorm(sequence_output)
-        else:
-            sequence_output = context_emb
-            
-        sequence_output = self.dense(sequence_output)
-        
-        pooled_output = self.pooler(torch.sum(sequence_output, dim=1))
-        prediction_scores = self.lm_head(sequence_output)
-        class_logit = self.classifier(pooled_output)
-        return {
-            'hidden_states':sequence_output,
-            'pooled_output':pooled_output,
-            'prediction_scores':prediction_scores,
-            'class_logit':class_logit
-        }
-
-    def dot_attention(self, q, k, v):
-        # q: [bs, poly_m, dim] or [bs, res_cnt, dim]
-        # k=v: [bs, length, dim] or [bs, poly_m, dim]
-        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, poly_m, length]
-        attn_weights = F.softmax(attn_weights, -1)
-        output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
-        return output
 
 class CompressedCASEModel(BertPreTrainedModel):
     def __init__(self, args, wav_config, bert_config):
@@ -289,14 +185,15 @@ class CompressedCASEModel(BertPreTrainedModel):
         sequence_output = self.layer_norm(sequence_output)
         sequence_output = self.dense(sequence_output)
 
-        # prediction_scores = self.cls(sequence_output)
+        
         pooled_output = sequence_output.mean(dim=1)
-
+        prediction_scores = self.cls(sequence_output)
         class_logit = self.classifier(pooled_output)
         
         return {
             "hidden_states": sequence_output,
             "pooled_output": pooled_output,
+            "prediction_scores":prediction_scores,
             "class_logit": class_logit
         }
 
@@ -369,14 +266,14 @@ class CompressedCCEModel(BertPreTrainedModel):
         addition_output = self.layer_norm(addition_output)
         # addition_output = self.dense(addition_output)
 
-        # prediction_scores = self.cls(addition_output)
+        prediction_scores = self.cls(addition_output)
         pooled_output = addition_output.mean(dim=1)
-
         class_logit = self.classifier(pooled_output)
         
         return {
             "hidden_states": addition_output,
             "pooled_output": pooled_output,
+            "prediction_scores":prediction_scores,
             "class_logit": class_logit
         }
 
@@ -441,14 +338,15 @@ class CompressedCCEModel_V2(BertPreTrainedModel):
         addition_output = self.layer_norm(addition_output)
         addition_output = self.dense(addition_output)
         
-        # prediction_scores = self.cls(addition_output)
+        
         pooled_output = addition_output.mean(dim=1)
-
+        prediction_scores = self.cls(addition_output)
         class_logit = self.classifier(pooled_output)
         
         return {
             "hidden_states": addition_output,
             "pooled_output": pooled_output,
+            "prediction_scores":prediction_scores,
             "class_logit": class_logit
         }
 
@@ -509,7 +407,6 @@ class ConcatModel(BertPreTrainedModel):
         concat_output = self.blend_layer(concat_output)
         concat_output = self.layer_norm(concat_output)
 
-        prediction_scores = self.cls(concat_output)
         pooled_output = concat_output.mean(dim=1)
 
         class_logit = self.classifier(pooled_output)
@@ -633,8 +530,6 @@ class MultiModalMixer(BertPreTrainedModel):
         x = self.ln(x)
         pooled_output = x.mean(dim=1)
 
-        # prediction_scores = self.cls(concat_output)
-
         class_logit = self.classifier(pooled_output)
         
         return {
@@ -684,7 +579,7 @@ class TextOnlyModel(BertPreTrainedModel):
             "class_logit": class_logit
         }
 
-class SpeechOnlyModel(BertPreTrainedModel):
+class SpeechOnlyModel(nn.Module):
     """
     Contextual Acoustic Speech Embedding (CASE) model
     """

@@ -4,7 +4,7 @@ import wandb
 
 from tqdm import tqdm, trange
 from torcheval.metrics.functional import multiclass_f1_score, multiclass_accuracy
-
+from transformers import AutoTokenizer
 from utils.contrastive import contrastive_set
 
 class ModelTrainer():
@@ -13,6 +13,7 @@ class ModelTrainer():
                  model, loss_fn, optimizer,  
                  train_dataloader, valid_dataloader=None, test_dataloader=None,
                  scheduler = None, contrastive_loss_fn = None,
+                 verbalizer_value=None,
                  base_score:float=0.45):
         
         self.args = args # args: device, loss_fn, optimizer, save_dir
@@ -28,6 +29,10 @@ class ModelTrainer():
         self.test_dataloader = test_dataloader
         
         self.base_score = base_score
+        self.verbalizer_value = verbalizer_value
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(self.args.lm_path)
+        
         
     def train(self):
         self.model.to(self.args.device)
@@ -75,25 +80,37 @@ class ModelTrainer():
             attention_mask = batch["attention_mask"].to(self.args.device)
             token_type_ids = batch["token_type_ids"].to(self.args.device)
             
-            if self.args.model == "speech_only":
-                output = self.model(audio_tensor)
-            else:
-                output = self.model(
-                    input_ids, 
-                    attention_mask,
-                    token_type_ids,
-                    audio_tensor 
-                    )
-            
+            output = self.model(
+                input_ids, 
+                attention_mask,
+                token_type_ids,
+                audio_tensor 
+                )
             logit = output['class_logit']
-            loss = self.loss_fn(logit, label)
+            if self.args.pet: 
+                # PET
+                output = output['prediction_scores']
+                _, mask_pos = torch.where(input_ids==self.tokenizer.mask_token_id)
+                self.verbalizer_idx = self.tokenizer(self.verbalizer_value, 
+                                                              add_special_tokens=False, 
+                                                              return_tensors='pt').input_ids.squeeze().to(self.args.device)
+               
+                # Verbalizer Label 토큰에 대한 logit값
+                logit = torch.stack([pred_score[mask_idx, :][self.verbalizer_idx] for pred_score, mask_idx in zip(output, mask_pos)])
+                # print(output.shape, mask_pos.shape)
+                loss = self.loss_fn(logit, label)
+                
+            else:
+                # ORG
+                logit = output['class_logit']
+                loss = self.loss_fn(logit, label)
 
-            if self.args.contrastive:
-                pooled_output = output['pooled_output']
-
-                contrastive_value, contrastive_label = contrastive_set(pooled_output, label)
-                contrastive_loss = self.contrastive_loss_fn(contrastive_value, contrastive_label)
-                loss += 0.1 * contrastive_loss
+                if self.args.contrastive:
+                    # Contrastive
+                    pooled_output = output['pooled_output']
+                    contrastive_value, contrastive_label = contrastive_set(pooled_output, label)
+                    contrastive_loss = self.contrastive_loss_fn(contrastive_value, contrastive_label)
+                    loss += 0.1 * contrastive_loss
 
             loss.backward()
 
@@ -149,12 +166,27 @@ class ModelTrainer():
                     attention_mask,
                     token_type_ids,
                     audio_tensor 
-                    )['class_logit']
+                    )
                 
-                valid_step_loss = self.loss_fn(output, label)
+                if self.args.pet: 
+                    # PET
+                    output = output['prediction_scores']
+                    _, mask_pos = torch.where(input_ids==self.tokenizer.mask_token_id)
+                    self.verbalizer_idx = self.tokenizer(self.verbalizer_value, 
+                                                                add_special_tokens=False, 
+                                                                return_tensors='pt').input_ids.squeeze().to(self.args.device)
+                    
+                    # Verbalizer Label 토큰에 대한 logit값
+                    logit = torch.stack([pred_score[mask_idx, :][self.verbalizer_idx] for pred_score, mask_idx in zip(output, mask_pos)])
+                    valid_step_loss = self.loss_fn(logit, label)
+                
+                else:
+                    logit = output['class_logit']
+                    valid_step_loss = self.loss_fn(logit, label)
+                    
                 val_epoch_loss += valid_step_loss.detach().cpu().item()
                 
-                output_list.append(output.detach().cpu())
+                output_list.append(logit.detach().cpu())
                 label_list.append(label.detach().cpu())
         
         m_f1 = self._macro_f1_score(output_list, label_list)
@@ -190,15 +222,26 @@ class ModelTrainer():
                 attention_mask = batch["attention_mask"].to(self.args.device)
                 token_type_ids = batch["token_type_ids"].to(self.args.device)
                 
-                if self.args.model == "speech_only":
-                    output = self.model(audio_tensor)['class_logit']
+                output = self.model(
+                    input_ids, 
+                    attention_mask,
+                    token_type_ids,
+                    audio_tensor 
+                    )
+                
+                if self.args.pet: 
+                    # PET
+                    output = output['prediction_scores']
+                    _, mask_pos = torch.where(input_ids==self.tokenizer.mask_token_id)
+                    self.verbalizer_idx = self.tokenizer(self.verbalizer_value, 
+                                                                add_special_tokens=False, 
+                                                                return_tensors='pt').input_ids.squeeze().to(self.args.device)
+                    
+                    # Verbalizer Label 토큰에 대한 logit값
+                    output = torch.stack([pred_score[mask_idx, :][self.verbalizer_idx] for pred_score, mask_idx in zip(output, mask_pos)])
+                    
                 else:
-                    output = self.model(
-                        input_ids, 
-                        attention_mask,
-                        token_type_ids,
-                        audio_tensor 
-                        )['class_logit']
+                    output = output['class_logit']
                 
                 output_list.append(output.detach().cpu())
                 label_list.append(label.detach().cpu())
