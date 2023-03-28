@@ -556,3 +556,49 @@ class MultiModalMixer(BertPreTrainedModel):
             batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
         
         return batch_speech_embedding
+
+class TextOnlyModel(BertPreTrainedModel):
+    def __init__(self, args, bert_config):
+        super().__init__(bert_config)
+
+        self.args = args
+
+        self.bert = BertModel.from_pretrained(args.lm_path)
+        self.dropout = nn.Dropout()
+        self.classifier = nn.Linear(bert_config.hidden_size, args.num_labels)
+
+    def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
+
+        pooled_output = self.bert(input_ids, attention_mask, token_type_ids)[1]
+
+        pooled_output = self.dropout(pooled_output)
+        class_logit = self.classifier(pooled_output)
+        
+        return {
+            "pooled_output": pooled_output,
+            "class_logit": class_logit
+        }
+
+class SpeechOnlyModel(nn.Module):
+    """
+    Contextual Acoustic Speech Embedding (CASE) model
+    """
+    def __init__(self, args, bert_config, wav_config):
+        super().__init__(bert_config)
+
+        self.args = args
+
+        self.dropout = nn.Dropout()
+        self.classifier = nn.Linear(wav_config.hidden_size, args.num_labels)
+        
+    def forward(self, speech_emb):
+        
+        pooled_output = torch.mean(speech_emb, dim=1)
+
+        pooled_output = self.dropout(pooled_output)
+        class_logit = self.classifier(pooled_output)        
+
+        return {
+            'pooled_output':pooled_output,
+            'class_logit':class_logit
+        }
