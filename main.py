@@ -23,8 +23,7 @@ from trainer import ModelTrainer
 from models import (
     CompressedCASEModel,
     CASEmodel, 
-    CompressedCCEModel, 
-    CompressedCCEModel_V2,
+    CompressedCSEModel, 
     ConcatModel, 
     MultiModalMixer,
     TextOnlyModel,
@@ -157,10 +156,8 @@ def main(args):
         model = CompressedCASEModel(args, wav_config, bert_config)
     if args.model == "CASE":
         model = CASEmodel(args.lm_path, wav_config, bert_config, args.num_labels)
-    elif args.model == "CCE":
-        model = CompressedCCEModel(args, wav_config, bert_config)
-    elif args.model == "CCE_V2":
-        model = CompressedCCEModel_V2(args, wav_config, bert_config)
+    elif args.model == "CSE":
+        model = CompressedCSEModel(args, wav_config, bert_config)
     elif args.model == "Concat":
         model = ConcatModel(args, wav_config, bert_config)
     elif args.model == "MMM":
@@ -235,6 +232,7 @@ if __name__ == "__main__":
     parser.add_argument("--contrastive", type=bool, default=False)
     parser.add_argument("--loss", type=str, default="crossentropy")
     parser.add_argument("--gamma", type=float, default=1.0, help="focalloss's gamma argument")
+    parser.add_argument("--size", type=str, default="base", help="model size parameter. Choose between 'base' and 'small'")
     
     ## -- directory
     parser.add_argument("--data_path", type=str, default="data/session_train.csv")
