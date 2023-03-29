@@ -176,7 +176,7 @@ def main(args):
 
     optimizer = AdamW(
         model.parameters(),
-        lr=1e-5,
+        lr=args.lr,
         no_deprecation_warning=True
         )
     
