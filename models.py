@@ -554,11 +554,8 @@ class TextOnlyModel(BertPreTrainedModel):
         }
 
 class SpeechOnlyModel(nn.Module):
-    """
-    Contextual Acoustic Speech Embedding (CASE) model
-    """
-    def __init__(self, args, bert_config, wav_config):
-        super().__init__(bert_config)
+    def __init__(self, args, wav_config):
+        super().__init__()
 
         self.args = args
 

@@ -124,10 +124,10 @@ def main(args):
             )
 
     ####################
-    test_data = pd.read_csv("data/test.csv")
+    test_data = pd.read_csv("data/session_test.csv")
     test_data.reset_index(inplace=True)
 
-    test_audio_emb = audio_embedding.save_and_load(args.am_path, test_data['audio'].tolist(), args.device, "data/emb_test.pt")
+    test_audio_emb = audio_embedding.save_and_load(args.am_path, test_data['audio'].tolist(), args.device, "data/emb_test_t.pt")
 
     test_dataset = ETRIDataset(
         audio_embedding = test_audio_emb, 
@@ -169,7 +169,7 @@ def main(args):
     elif args.model == "text_only":
         model = TextOnlyModel(args, bert_config)
     elif args.model == "speech_only":
-        model = SpeechOnlyModel(args, bert_config, wav_config)
+        model = SpeechOnlyModel(args, wav_config)
 
     optimizer = AdamW(
         model.parameters(),
@@ -237,10 +237,10 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=1.0, help="focalloss's gamma argument")
     
     ## -- directory
-    parser.add_argument("--data_path", type=str, default="data/train.csv")
+    parser.add_argument("--data_path", type=str, default="data/session_train.csv")
     parser.add_argument("--save_path", type=str, default="save")
     ###### emb_train에 대한 설명 부과하기
-    parser.add_argument("--embedding_path", type=str, default="data/emb_train.pt")
+    parser.add_argument("--embedding_path", type=str, default="data/emb_train_t.pt")
 
     # -- utils
     parser.add_argument("--device", type=str, default="cuda:0")
