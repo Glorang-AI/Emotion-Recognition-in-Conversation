@@ -30,8 +30,9 @@ class ModelTrainer():
         
         self.base_score = base_score
 
-        if verbalizer_value:
+        if verbalizer_value!=None and args.pet:
             self.verbalizer_value = list(verbalizer_value.values())
+            
         else:
             self.verbalizer_value = None
 
@@ -393,43 +394,6 @@ class ModelTrainer():
         y_test = torch.cat(label_list).tolist()
         wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
                                                                   preds = y_pred, class_names=labels)})
-        
-    def _test_speech(self):
-        # Validation
-        self.model.eval()
-
-        output_list=[]
-        label_list=[]
-        with torch.no_grad():
-
-            pbar=tqdm(self.test_dataloader)
-            for step, batch in enumerate(pbar):
-
-                label = batch['label'].to(self.args.device)
-                audio_tensor = batch['audio_emb'].to(self.args.device)
-                
-                output = self.model(audio_tensor)
-                output = output['class_logit']
-                
-                output_list.append(output.detach().cpu())
-                label_list.append(label.detach().cpu())
-
-        m_f1 = self._macro_f1_score(output_list, label_list)
-        w_f1 = self._weighted_f1_score(output_list, label_list)
-        mic_f1 = self._micro_f1_score(output_list, label_list)
-        acc = self._accuracy_score(output_list, label_list)
-
-        wandb.log({'test_macro_f1_score':m_f1,
-                   'test_weighted_f1_score':w_f1,
-                   'test_micro_f1_score':mic_f1,
-                   'test_accuracy':acc})
-        
-        labels = list(self.label_dict.keys())
-        y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
-        y_test = torch.cat(label_list).tolist()
-        wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
-                                                                  preds = y_pred, class_names=labels)})
-
 
     def _macro_f1_score(self, logit_list, label_list):
         logits = torch.cat(logit_list)
