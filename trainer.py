@@ -34,7 +34,7 @@ class ModelTrainer():
             self.verbalizer_value = list(verbalizer_value.values())
         else:
             self.verbalizer_value = None
-            
+
         self.label_dict = label_dict
         self.neutral_label = label_dict['neutral']
         

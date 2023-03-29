@@ -201,7 +201,7 @@ class CompressedCASEModel(BertPreTrainedModel):
             if sequence_length >= self.args.audio_max_len:
                 se = se[:, :self.args.audio_max_len, :].to(self.args.device)
             else:
-                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                pad = torch.Tensor([[[0]*self.wav_config.hidden_size]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
                 se = torch.cat([se, pad], dim=1)
             
             batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
@@ -294,7 +294,7 @@ class CompressedCSEModel(BertPreTrainedModel):
             if sequence_length >= self.args.audio_max_len:
                 se = se[:, :self.args.audio_max_len, :].to(self.args.device)
             else:
-                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                pad = torch.Tensor([[[0]*self.wav_config.hidden_size]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
                 se = torch.cat([se, pad], dim=1)
             
             batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
@@ -361,7 +361,7 @@ class ConcatModel(BertPreTrainedModel):
             if sequence_length >= self.args.audio_max_len:
                 se = se[:, :self.args.audio_max_len, :].to(self.args.device)
             else:
-                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                pad = torch.Tensor([[[0]*self.wav_config.hidden_size]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
                 se = torch.cat([se, pad], dim=1)
             
             batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
@@ -485,7 +485,7 @@ class MultiModalMixer(BertPreTrainedModel):
             if sequence_length >= self.args.audio_max_len:
                 se = se[:, :self.args.audio_max_len, :].to(self.args.device)
             else:
-                pad = torch.Tensor([[[0]*self.args.audio_max_len]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
+                pad = torch.Tensor([[[0]*self.wav_config.hidden_size]*(self.args.audio_max_len-sequence_length)]).to(self.args.device)
                 se = torch.cat([se, pad], dim=1)
             
             batch_speech_embedding = torch.cat([batch_speech_embedding, se], dim=0)
