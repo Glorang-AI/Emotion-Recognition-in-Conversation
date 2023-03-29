@@ -146,16 +146,22 @@ def main(args):
         num_workers=args.num_workers,
         )
     
-    ####################
+    
     if args.loss == "focal":
         loss_fn = loss.FocalLoss(gamma = args.gamma)
     else:
         loss_fn=nn.CrossEntropyLoss()
 
+    if args.size == "small":
+        args.audio_max_len = 512
+        args.hidden_size = 256
+    else:
+        args.hidden_size = bert_config.hidden_size
+
     if args.model == "CCASE":
         model = CompressedCASEModel(args, wav_config, bert_config)
     if args.model == "CASE":
-        model = CASEmodel(args.lm_path, wav_config, bert_config, args.num_labels)
+        model = CASEmodel(args, wav_config, bert_config)
     elif args.model == "CSE":
         model = CompressedCSEModel(args, wav_config, bert_config)
     elif args.model == "Concat":
