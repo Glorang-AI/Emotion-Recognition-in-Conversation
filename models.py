@@ -422,8 +422,9 @@ class MultiModalMixer(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        for params in self.bert.parameters():
-            params.requires_grad = False
+        if self.args.size == "small":
+            for params in self.bert.parameters():
+                params.requires_grad = False
 
         # self.cls = BertPreTrainingHeads(bert_config)
         
