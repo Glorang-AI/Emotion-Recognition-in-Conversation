@@ -122,7 +122,7 @@ def main(args):
             )
 
     ####################
-    test_data = pd.read_csv("data/test.csv")
+    test_data = pd.read_csv("data/session_test.csv")
     test_data.reset_index(inplace=True)
 
     test_audio_emb = audio_embedding.save_and_load(args.am_path, test_data['audio'].tolist(), args.device, "data/emb_test.pt")
@@ -196,7 +196,7 @@ def main(args):
             model, loss_fn, optimizer,
             train_dataloader, valid_dataloader=None, test_dataloader=test_dataloader,
             scheduler = scheduler,
-            verbalizer_value=pet_label_dict if args.pet else None,
+            verbalizer_value=pet_label_dict,
             label_dict = label_dict,
             contrastive_loss_fn = contrastive_fn)
     
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument("--contrastive", type=bool, default=False)
 
     ## -- directory
-    parser.add_argument("--data_path", type=str, default="data/train.csv")
+    parser.add_argument("--data_path", type=str, default="data/session_train.csv")
     parser.add_argument("--save_path", type=str, default="save")
     ###### emb_train에 대한 설명 부과하기
     parser.add_argument("--embedding_path", type=str, default="data/emb_train.pt")
