@@ -30,8 +30,9 @@ class ModelTrainer():
         
         self.base_score = base_score
 
-        if verbalizer_value:
+        if verbalizer_value!=None and args.pet:
             self.verbalizer_value = list(verbalizer_value.values())
+            
         else:
             self.verbalizer_value = None
 
