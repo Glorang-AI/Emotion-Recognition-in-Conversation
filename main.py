@@ -238,7 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--contrastive", type=bool, default=False)
     parser.add_argument("--loss", type=str, default="crossentropy")
     parser.add_argument("--gamma", type=float, default=1.0, help="focalloss's gamma argument")
-    parser.add_argument("--size", type=str, default="base", help="model size parameter. Choose between 'base' and 'small'")
+    parser.add_argument("--size", type=str, default="base", help="model size parameter. Choose between 'large', 'base' and 'small'")
     
     ## -- directory
     parser.add_argument("--data_path", type=str, default="data/session_train.csv")

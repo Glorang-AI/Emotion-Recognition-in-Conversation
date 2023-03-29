@@ -50,7 +50,7 @@ class CASEmodel(BertPreTrainedModel):
 
         self.bert = BertModel.from_pretrained(args.lm_path)
         
-        if self.args.size == "small":
+        if self.args.size == "small" or self.args.size == "base":
             for params in self.bert.parameters():
                 params.requires_grad = False
 
@@ -225,7 +225,7 @@ class CompressedCSEModel(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        if self.args.size == "small":
+        if self.args.size == "small" or self.args.size == "base":
             for params in self.bert.parameters():
                 params.requires_grad = False
 
@@ -422,7 +422,7 @@ class MultiModalMixer(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        if self.args.size == "small":
+        if self.args.size == "small" or self.args.size == "base":
             for params in self.bert.parameters():
                 params.requires_grad = False
 
