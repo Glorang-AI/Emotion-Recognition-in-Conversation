@@ -58,14 +58,14 @@ class CASEmodel(BertPreTrainedModel):
             self.cls = BertPreTrainingHeads(bert_config)
     
         self.convert_dim = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
+        self.LayerNorm = nn.LayerNorm(bert_config.hidden_size, eps=bert_config.layer_norm_eps)
         self.dense = nn.Linear(bert_config.hidden_size, self.args.hidden_size)
-        self.LayerNorm = nn.LayerNorm(self.args.hidden_size, eps=bert_config.layer_norm_eps)
         
         self.pooler = nn.Sequential(
             nn.Linear(self.args.hidden_size, self.args.hidden_size),
             nn.Tanh()
         )
-        self.classifier = CLSmodel(self.args.num_labels, bert_config)
+        self.classifier = CLSmodel(self.args, bert_config)
         
     def forward(self, input_ids, attention_mask,
                 token_type_ids, speech_emb=None):
@@ -109,15 +109,18 @@ class CASEmodel(BertPreTrainedModel):
         return output
 
 class CLSmodel(nn.Module):
-    def __init__(self, num_labels, config):
+    def __init__(self, args, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+
+        self.args = args
+
+        self.dense = nn.Linear(self.args.hidden_size, self.args.hidden_size)
         classifier_dropout = (
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
         self.activation = nn.Tanh()
-        self.out_proj = nn.Linear(config.hidden_size, num_labels)
+        self.out_proj = nn.Linear(self.args.hidden_size, self.args.num_labels)
     
     def forward(self, pooler_output):
         
@@ -225,7 +228,7 @@ class CompressedCSEModel(BertPreTrainedModel):
         if self.args.size == "small":
             for params in self.bert.parameters():
                 params.requires_grad = False
-                
+
         if self.args.pet:
             self.cls = BertPreTrainingHeads(bert_config)
         
