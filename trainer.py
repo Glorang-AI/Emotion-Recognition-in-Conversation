@@ -29,7 +29,12 @@ class ModelTrainer():
         self.test_dataloader = test_dataloader
         
         self.base_score = base_score
-        self.verbalizer_value = list(verbalizer_value.values())
+
+        if verbalizer_value:
+            self.verbalizer_value = list(verbalizer_value.values())
+        else:
+            self.verbalizer_value = None
+
         self.label_dict = label_dict
         self.neutral_label = label_dict['neutral']
         
@@ -39,13 +44,21 @@ class ModelTrainer():
     def train(self):
         self.model.to(self.args.device)
         for epoch in trange(self.args.epochs):
-            
-            self._train() # Train
 
-            if self.args.val_ratio:
-                val_loss = self._validation() # Validation
+            if self.args.model == "speech_only":
+                self._train_speech()
+                if self.args.val_ratio:
+                    val_loss = self._validation_speech() # Validation
 
-            self._test()
+                self._test_speech() # Test
+
+            else:
+                self._train() # Train
+
+                if self.args.val_ratio:
+                    val_loss = self._validation() # Validation
+
+                self._test() # Test
 
             # if self.base_score >= val_loss:
 
@@ -146,9 +159,69 @@ class ModelTrainer():
             \nTrain Macro-F1: {m_f1:.4f} \nTrain Weighted-F1: {w_f1:.4f} \nTrain Micro-F1: {mic_f1:.4f}")
 
         pbar.close()
+
+    def _train_speech(self):
+        # Train
+        self.model.train()
+        
+        train_epoch_loss = 0
+        output_list = []
+        label_list = []
+
+        pbar = tqdm(self.train_dataloader)
+        for step, batch in enumerate(pbar):
+            self.optimizer.zero_grad()
+            
+            label = batch['label'].to(self.args.device)
+            audio_tensor = batch['audio_emb'].to(self.args.device)
+            
+            output = self.model(audio_tensor)
+
+            logit = output['class_logit']
+            loss = self.loss_fn(logit, label)
+
+            if self.args.contrastive:
+                # Contrastive
+                pooled_output = output['pooled_output']
+                contrastive_value, contrastive_label = contrastive_set(pooled_output, label)
+                contrastive_loss = self.contrastive_loss_fn(contrastive_value, contrastive_label)
+                loss += 0.1 * contrastive_loss
+
+            loss.backward()
+
+            self.optimizer.step()
+            if self.scheduler:
+                self.scheduler.step()
+
+            step_loss = loss.detach().cpu().item()
+            train_epoch_loss += step_loss
+
+            wandb.log({'loss':step_loss})
+            
+            output_list.append(logit.detach().cpu())
+            label_list.append(label.detach().cpu())
+
+            pbar.set_postfix({'loss': step_loss, 
+                        "lr": self.optimizer.param_groups[0]["lr"]})
+        
+        train_epoch_loss /= (step+1)
+        m_f1 = self._macro_f1_score(output_list, label_list)
+        mic_f1 = self._micro_f1_score(output_list, label_list)
+        w_f1 = self._weighted_f1_score(output_list, label_list)
+        acc = self._accuracy_score(output_list, label_list)
+        
+        wandb.log({'train_macro_f1_score':m_f1,
+                   'train_weighted_f1_score':w_f1,
+                   'train_micro_f1_score':mic_f1,
+                   'train_accuracy':acc})
+
+        print(f"Train Loss: {train_epoch_loss: .4f} \nTrain Acc: {acc :.4f} \
+            \nTrain Macro-F1: {m_f1:.4f} \nTrain Weighted-F1: {w_f1:.4f} \nTrain Micro-F1: {mic_f1:.4f}")
+
+        pbar.close()
         
     def _validation(self):
-        # Validation
+            # Validation
         self.model.eval()
 
         val_epoch_loss=0
@@ -215,6 +288,54 @@ class ModelTrainer():
         
         return val_epoch_loss
 
+    def _validation_speech(self):
+        # Validation
+        self.model.eval()
+
+        val_epoch_loss=0
+        output_list=[]
+        label_list=[]
+        with torch.no_grad():
+
+            pbar=tqdm(self.valid_dataloader)
+            for step, batch in enumerate(pbar):
+
+                label = batch['label'].to(self.args.device)
+                audio_tensor = batch['audio_emb'].to(self.args.device)
+                
+                output = self.model(audio_tensor)
+
+                logit = output['class_logit']
+                valid_step_loss = self.loss_fn(logit, label)
+                    
+                val_epoch_loss += valid_step_loss.detach().cpu().item()
+                
+                output_list.append(logit.detach().cpu())
+                label_list.append(label.detach().cpu())
+        
+        m_f1 = self._macro_f1_score(output_list, label_list)
+        w_f1 = self._weighted_f1_score(output_list, label_list)
+        mic_f1 = self._micro_f1_score(output_list, label_list)
+        acc = self._accuracy_score(output_list, label_list)
+
+        val_epoch_loss /= (step+1)
+
+        wandb.log({'val_epoch_loss':val_epoch_loss,
+                   'val_macro_f1_score':m_f1,
+                   'val_weighted_f1_score':w_f1,
+                   'val_micro_f1_score':mic_f1,
+                   'val_accuracy':acc})
+        
+        y_pred = torch.cat(output_list)
+        y_test = torch.cat(label_list)
+        
+        print(f"Valid Loss: {val_epoch_loss: .4f} \nValid Acc: {acc :.4f} \
+              \nValid Macro-F1: {m_f1:.4f} \nValid Weighted-F1: {w_f1:.4f} \nValid Micro-F1: {mic_f1:.4f}")
+        
+        return val_epoch_loss
+    
+
+
     def _test(self):
         # Validation
         self.model.eval()
@@ -272,7 +393,6 @@ class ModelTrainer():
         y_test = torch.cat(label_list).tolist()
         wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
                                                                   preds = y_pred, class_names=labels)})
-        
 
     def _macro_f1_score(self, logit_list, label_list):
         logits = torch.cat(logit_list)

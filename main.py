@@ -23,12 +23,13 @@ from trainer import ModelTrainer
 from models import (
     CompressedCASEModel,
     CASEmodel, 
-    CompressedCCEModel, 
-    CompressedCCEModel_V2,
+    CompressedCSEModel, 
     ConcatModel, 
-    MultiModalMixer
+    MultiModalMixer,
+    TextOnlyModel,
+    SpeechOnlyModel,
 )
-from utils import audio_embedding, seed
+from utils import audio_embedding, seed, loss
 
 def main(args):
     seed.seed_setting(args.seed)
@@ -125,7 +126,7 @@ def main(args):
     test_data = pd.read_csv("data/session_test.csv")
     test_data.reset_index(inplace=True)
 
-    test_audio_emb = audio_embedding.save_and_load(args.am_path, test_data['audio'].tolist(), args.device, "data/emb_test.pt")
+    test_audio_emb = audio_embedding.save_and_load(args.am_path, test_data['audio'].tolist(), args.device, "data/emb_test_t.pt")
 
     test_dataset = ETRIDataset(
         audio_embedding = test_audio_emb, 
@@ -145,22 +146,33 @@ def main(args):
         num_workers=args.num_workers,
         )
     
-    ####################
-    loss_fn=nn.CrossEntropyLoss()
+    
+    if args.loss == "focal":
+        loss_fn = loss.FocalLoss(gamma = args.gamma)
+    else:
+        loss_fn=nn.CrossEntropyLoss()
+
+    if args.size == "small":
+        args.audio_max_len = 512
+        args.hidden_size = 256
+    else:
+        args.hidden_size = bert_config.hidden_size
 
     if args.model == "CCASE":
         model = CompressedCASEModel(args, wav_config, bert_config)
     if args.model == "CASE":
-        model = CASEmodel(args.lm_path, wav_config, bert_config, args.num_labels)
-    elif args.model == "CCE":
-        model = CompressedCCEModel(args, wav_config, bert_config)
-    elif args.model == "CCE_V2":
-        model = CompressedCCEModel_V2(args, wav_config, bert_config)
+        model = CASEmodel(args, wav_config, bert_config)
+    elif args.model == "CSE":
+        model = CompressedCSEModel(args, wav_config, bert_config)
     elif args.model == "Concat":
         model = ConcatModel(args, wav_config, bert_config)
     elif args.model == "MMM":
         model = MultiModalMixer(args, wav_config, bert_config)
         model.freeze()
+    elif args.model == "text_only":
+        model = TextOnlyModel(args, bert_config)
+    elif args.model == "speech_only":
+        model = SpeechOnlyModel(args, wav_config)
 
     optimizer = AdamW(
         model.parameters(),
@@ -224,12 +236,15 @@ if __name__ == "__main__":
     parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")
     parser.add_argument("--contrastive", type=bool, default=False)
-
+    parser.add_argument("--loss", type=str, default="crossentropy")
+    parser.add_argument("--gamma", type=float, default=1.0, help="focalloss's gamma argument")
+    parser.add_argument("--size", type=str, default="base", help="model size parameter. Choose between 'base' and 'small'")
+    
     ## -- directory
     parser.add_argument("--data_path", type=str, default="data/session_train.csv")
     parser.add_argument("--save_path", type=str, default="save")
     ###### emb_train에 대한 설명 부과하기
-    parser.add_argument("--embedding_path", type=str, default="data/emb_train.pt")
+    parser.add_argument("--embedding_path", type=str, default="data/emb_train_t.pt")
 
     # -- utils
     parser.add_argument("--device", type=str, default="cuda:0")
