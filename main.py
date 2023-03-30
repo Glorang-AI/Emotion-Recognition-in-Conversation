@@ -155,6 +155,9 @@ def main(args):
     if args.size == "small":
         args.audio_max_len = 512
         args.hidden_size = 256
+    elif args.size == "sb":
+        args.audio_max_len = 512
+        args.hidden_size = bert_config.hidden_size
     else:
         args.hidden_size = bert_config.hidden_size
 
@@ -176,7 +179,7 @@ def main(args):
 
     optimizer = AdamW(
         model.parameters(),
-        lr=1e-5,
+        lr=args.lr,
         no_deprecation_warning=True
         )
     
@@ -232,7 +235,7 @@ if __name__ == "__main__":
     parser.add_argument("--audio_max_len", type=int, default=1024)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--scheduler", type=str, default=None)
-    parser.add_argument("--case_concat", type=bool, default=False)
+    parser.add_argument("--concat", type=bool, default=False)
     parser.add_argument("--num_labels", type=int, default=7)
     parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")
