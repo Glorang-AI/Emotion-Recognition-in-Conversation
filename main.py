@@ -21,7 +21,6 @@ from sklearn.model_selection import train_test_split
 from dataset import ETRIDataset
 from trainer import ModelTrainer
 from models import (
-    CompressedCASEModel,
     CASEmodel, 
     CompressedCSEModel, 
     ConcatModel, 
@@ -161,8 +160,6 @@ def main(args):
     else:
         args.hidden_size = bert_config.hidden_size
 
-    if args.model == "CCASE":
-        model = CompressedCASEModel(args, wav_config, bert_config)
     if args.model == "CASE":
         model = CASEmodel(args, wav_config, bert_config)
     elif args.model == "CSE":
@@ -235,9 +232,10 @@ if __name__ == "__main__":
     parser.add_argument("--audio_max_len", type=int, default=1024)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--scheduler", type=str, default=None)
-    parser.add_argument("--concat", type=bool, default=False)
+    parser.add_argument("--opt", type=str, default='mean', help="Can choose operators type between 'mean' and 'sum'")
+    parser.add_argument("--mm_type", type=str, default='add', help="concat or add")
     parser.add_argument("--num_labels", type=int, default=7)
-    parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
+    parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can choose audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")
     parser.add_argument("--contrastive", type=bool, default=False)
     parser.add_argument("--loss", type=str, default="crossentropy")
