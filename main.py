@@ -232,6 +232,7 @@ if __name__ == "__main__":
     parser.add_argument("--audio_max_len", type=int, default=1024)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--scheduler", type=str, default=None)
+    parser.add_argument("--case_concat", type=bool, default=False)
     parser.add_argument("--num_labels", type=int, default=7)
     parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can chosse audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
     parser.add_argument("--model", type=str, default="CASE")

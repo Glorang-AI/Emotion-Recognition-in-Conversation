@@ -65,8 +65,12 @@ class CASEmodel(BertPreTrainedModel):
             nn.Linear(self.args.hidden_size, self.args.hidden_size),
             nn.Tanh()
         )
-        self.classifier = CLSmodel(self.args, bert_config)
-        
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Tanh(),
+            nn.Linear(self.args.hidden_size, self.args.num_labels)
+        )
+
     def forward(self, input_ids, attention_mask,
                 token_type_ids, speech_emb=None):
         
@@ -75,14 +79,18 @@ class CASEmodel(BertPreTrainedModel):
         if speech_emb != None:
             speech_emb = self.convert_dim(speech_emb)            
             att_emb = self.dot_attention(context_emb, speech_emb, speech_emb)
-            sequence_output = context_emb + att_emb
+            if self.args.case_concat:
+                sequence_output = torch.cat([context_emb, att_emb], dim=1)
+            else:
+                sequence_output = att_emb
+            
             sequence_output = self.LayerNorm(sequence_output)
         else:
             sequence_output = context_emb
             
         sequence_output = self.dense(sequence_output)
         
-        pooled_output = self.pooler(torch.sum(sequence_output, dim=1))
+        pooled_output = self.pooler(torch.mean(sequence_output, dim=1))
         class_logit = self.classifier(pooled_output)
 
         if self.args.pet:
@@ -101,11 +109,11 @@ class CASEmodel(BertPreTrainedModel):
             }
 
     def dot_attention(self, q, k, v):
-        # q: [bs, poly_m, dim] or [bs, res_cnt, dim]
-        # k=v: [bs, length, dim] or [bs, poly_m, dim]
-        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, poly_m, length]
+        # q: [bs, bert_l, dim]
+        # k=v: [bs, wav_l, dim]
+        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, bert_l, wav_l]
         attn_weights = F.softmax(attn_weights, -1)
-        output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
+        output = torch.matmul(attn_weights, v) # [bs, bert_l, dim]
         return output
 
 class CLSmodel(nn.Module):
@@ -209,11 +217,11 @@ class CompressedCASEModel(BertPreTrainedModel):
         return batch_speech_embedding
     
     def dot_attention(self, q, k, v):
-        # q: [bs, poly_m, dim] or [bs, res_cnt, dim]
-        # k=v: [bs, length, dim] or [bs, poly_m, dim]
-        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, poly_m, length]
+        # q: [bs, bert_l, dim]
+        # k=v: [bs, wav_l, dim]
+        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, bert_l, wav_l]
         attn_weights = F.softmax(attn_weights, -1)
-        output = torch.matmul(attn_weights, v) # [bs, poly_m, dim]
+        output = torch.matmul(attn_weights, v) # [bs, bert_l, dim]
         return output
 
 class CompressedCSEModel(BertPreTrainedModel):
