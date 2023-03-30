@@ -50,7 +50,7 @@ class CASEmodel(BertPreTrainedModel):
 
         self.bert = BertModel.from_pretrained(args.lm_path)
         
-        if self.args.size == "small" or self.args.size == "base":
+        if self.args.size == "small":
             for params in self.bert.parameters():
                 params.requires_grad = False
 
@@ -72,22 +72,19 @@ class CASEmodel(BertPreTrainedModel):
         )
 
     def forward(self, input_ids, attention_mask,
-                token_type_ids, speech_emb=None):
+                token_type_ids, speech_emb):
         
         context_emb = self.bert(input_ids, attention_mask, token_type_ids)[0]
         
-        if speech_emb != None:
-            speech_emb = self.convert_dim(speech_emb)            
-            att_emb = self.dot_attention(context_emb, speech_emb, speech_emb)
-            if self.args.case_concat:
-                sequence_output = torch.cat([context_emb, att_emb], dim=1)
-            else:
-                sequence_output = att_emb
-            
-            sequence_output = self.LayerNorm(sequence_output)
+        
+        speech_emb = self.convert_dim(speech_emb)            
+        att_emb = self.dot_attention(context_emb, speech_emb, speech_emb)
+        if self.args.concat:
+            sequence_output = torch.cat([context_emb, att_emb], dim=1)
         else:
-            sequence_output = context_emb
-            
+            sequence_output = att_emb + context_emb
+        
+        sequence_output = self.LayerNorm(sequence_output)
         sequence_output = self.dense(sequence_output)
         
         pooled_output = self.pooler(torch.mean(sequence_output, dim=1))
@@ -267,7 +264,7 @@ class CompressedCSEModel(BertPreTrainedModel):
         compressed_audio = self.compression_layer(transposed_audio)
         compressed_audio = compressed_audio.transpose(1, 2)
 
-        if self.args.cse_concat:
+        if self.args.concat:
             addition_output = torch.cat([projected_text, compressed_audio], dim=1)
         else:
             addition_output = projected_text + compressed_audio
