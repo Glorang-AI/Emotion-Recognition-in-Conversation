@@ -155,6 +155,9 @@ def main(args):
     if args.size == "small":
         args.audio_max_len = 512
         args.hidden_size = 256
+    elif args.size == "sb":
+        args.audio_max_len = 512
+        args.hidden_size = bert_config.hidden_size
     else:
         args.hidden_size = bert_config.hidden_size
 
