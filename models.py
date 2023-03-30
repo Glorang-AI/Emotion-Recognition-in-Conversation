@@ -267,7 +267,11 @@ class CompressedCSEModel(BertPreTrainedModel):
         compressed_audio = self.compression_layer(transposed_audio)
         compressed_audio = compressed_audio.transpose(1, 2)
 
-        addition_output = projected_text + compressed_audio
+        if self.args.cse_concat:
+            addition_output = torch.cat([projected_text, compressed_audio], dim=1)
+        else:
+            addition_output = projected_text + compressed_audio
+            
         addition_output = self.layer_norm(addition_output)
         # addition_output = self.dense(addition_output)
 
