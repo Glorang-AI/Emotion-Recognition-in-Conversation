@@ -245,6 +245,10 @@ class ConcatModel(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
+        if self.args.size == "small" or self.args.size == "base":
+            for params in self.bert.parameters():
+                params.requires_grad = False
+
         self.cls = BertPreTrainingHeads(bert_config)
         
         self.audio_projection = nn.Linear(wav_config.hidden_size, self.args.hidden_size)
@@ -254,8 +258,8 @@ class ConcatModel(BertPreTrainedModel):
         self.layer_norm = nn.LayerNorm(self.args.hidden_size)
 
         self.classifier = nn.Sequential(
-            # nn.Dropout(),
-            # nn.Linear(self.args.hidden_size, self.args.hidden_size),
+            nn.Dropout(),
+            nn.Linear(self.args.hidden_size, self.args.hidden_size),
             nn.GELU(),
             nn.Dropout(),
             nn.Linear(self.args.hidden_size, args.num_labels)
@@ -435,14 +439,22 @@ class TextOnlyModel(BertPreTrainedModel):
         self.args = args
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        self.dropout = nn.Dropout()
-        self.classifier = nn.Linear(bert_config.hidden_size, args.num_labels)
+        if self.args.size == "small" or self.args.size == "base":
+            for params in self.bert.parameters():
+                params.requires_grad = False
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(self.args.hidden_size, self.args.hidden_size),
+            nn.GELU(),
+            nn.Dropout(),
+            nn.Linear(self.args.hidden_size, args.num_labels)
+        )
 
     def forward(self, input_ids, attention_mask, token_type_ids, speech_emb=None):
 
         pooled_output = self.bert(input_ids, attention_mask, token_type_ids)[1]
 
-        pooled_output = self.dropout(pooled_output)
         class_logit = self.classifier(pooled_output)
         
         return {
@@ -457,7 +469,13 @@ class SpeechOnlyModel(nn.Module):
         self.args = args
 
         self.dropout = nn.Dropout()
-        self.classifier = nn.Linear(wav_config.hidden_size, args.num_labels)
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(self.args.hidden_size, self.args.hidden_size),
+            nn.GELU(),
+            nn.Dropout(),
+            nn.Linear(self.args.hidden_size, args.num_labels)
+        )
         
     def forward(self, speech_emb):
         

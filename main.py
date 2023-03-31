@@ -168,7 +168,7 @@ def main(args):
         model = ConcatModel(args, wav_config, bert_config)
     elif args.model == "MMM":
         model = MultiModalMixer(args, wav_config, bert_config)
-        model.freeze()
+        # model.freeze()
     elif args.model == "text_only":
         model = TextOnlyModel(args, bert_config)
     elif args.model == "speech_only":
