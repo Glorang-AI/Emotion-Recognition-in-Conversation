@@ -445,7 +445,7 @@ class TextOnlyModel(BertPreTrainedModel):
 
         self.classifier = nn.Sequential(
             nn.Dropout(),
-            nn.Linear(self.args.hidden_size, self.args.hidden_size),
+            nn.Linear(bert_config.hidden_size, self.args.hidden_size),
             nn.GELU(),
             nn.Dropout(),
             nn.Linear(self.args.hidden_size, args.num_labels)
@@ -471,7 +471,7 @@ class SpeechOnlyModel(nn.Module):
         self.dropout = nn.Dropout()
         self.classifier = nn.Sequential(
             nn.Dropout(),
-            nn.Linear(self.args.hidden_size, self.args.hidden_size),
+            nn.Linear(wav_config.hidden_size, self.args.hidden_size),
             nn.GELU(),
             nn.Dropout(),
             nn.Linear(self.args.hidden_size, args.num_labels)
