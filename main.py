@@ -22,6 +22,7 @@ from dataset import ETRIDataset
 from trainer import ModelTrainer
 from models import (
     CASEmodel, 
+    CASEmodel_V2,
     CompressedCSEModel, 
     ConcatModel, 
     MultiModalMixer,
@@ -162,6 +163,8 @@ def main(args):
 
     if args.model == "CASE":
         model = CASEmodel(args, wav_config, bert_config)
+    elif args.model == "CASE_V2":
+        model = CASEmodel_V2(args, wav_config, bert_config)
     elif args.model == "CSE":
         model = CompressedCSEModel(args, wav_config, bert_config)
     elif args.model == "Concat":
