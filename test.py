@@ -110,7 +110,7 @@ def test(args):
         print(f'Macro F1 Score: {test_m_f1}, Weighted F1 Score: {test_w_f1}, Accuracy: {test_acc}')
 
 if __name__ == "__main__":
-        # Define a config dictionary object
+    # Define a config dictionary object
     parser = argparse.ArgumentParser()
 
     # -- Choose Pretrained Model

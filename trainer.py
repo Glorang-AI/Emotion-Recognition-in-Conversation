@@ -5,80 +5,69 @@ import wandb
 from tqdm import tqdm, trange
 from torcheval.metrics.functional import multiclass_f1_score, multiclass_accuracy
 from transformers import AutoTokenizer
-from utils.contrastive import contrastive_set
 
 class ModelTrainer():
     
     def __init__(self, args, 
-                 model, loss_fn, optimizer,  
+                 model, loss_fn, optimizer, tokenizer,
                  train_dataloader, valid_dataloader=None, test_dataloader=None,
-                 scheduler = None, contrastive_loss_fn = None,
-                 label_dict=None, verbalizer_value=None,
-                 base_score:float=0.45):
+                 scheduler = None,
+                 label_dict=None, verbalizer_value=None):
         
         self.args = args # args: device, loss_fn, optimizer, save_dir
         
         self.model = model
         self.loss_fn = loss_fn
-        self.contrastive_loss_fn = contrastive_loss_fn
+        self.tokenizer = tokenizer
+
         self.optimizer = optimizer
         self.scheduler = scheduler
 
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
         self.test_dataloader = test_dataloader
-        
-        self.base_score = base_score
 
         if verbalizer_value!=None and args.pet:
             self.verbalizer_value = list(verbalizer_value.values())
-            
         else:
             self.verbalizer_value = None
 
         self.label_dict = label_dict
         self.neutral_label = label_dict['neutral']
-        
-        self.tokenizer = AutoTokenizer.from_pretrained(self.args.lm_path)
-        
-        
+                
     def train(self):
-        self.model.to(self.args.device)
-        for epoch in trange(self.args.epochs):
 
+        # 학습 수행
+        for _ in trange(self.args.epochs):
+            
             if self.args.model == "speech_only":
                 self._train_speech()
                 if self.args.val_ratio:
-                    val_loss = self._validation_speech() # Validation
-
-                self._test_speech() # Test
-
+                    self._validation_speech() # Validation
             else:
                 self._train() # Train
-
                 if self.args.val_ratio:
-                    val_loss = self._validation() # Validation
+                    self._validation() # Validation
 
-                self._test() # Test
-
-            # if self.base_score >= val_loss:
-
-            #     self.base_score=val_loss
-            #     if not os.path.exists(self.args.save_path):
-            #         os.makedirs(self.args.save_path)
-
-            #     torch.save(self.model.state_dict(), f'{self.args.save_path}/epoch:{epoch}_{self.args.model}model_shceduler-{self.args.scheduler}_{self.args.contrastive}.pt')
-            #     print(f'{epoch}epoch Model saved..!')
-        
+        # cuda cache 삭제
         torch.cuda.empty_cache()
-
         if self.args.val_ratio:
             del self.model, self.train_dataloader, self.valid_dataloader
         else:
             del self.model, self.train_dataloader
+
+    def test(self):
+
+        # Inference 수행
+        if self.args.model == "speech_only":
+            self._test_speech() # Test
+        else:
+            self._test() # Test
     
     def _train(self):
-        # Train
+        """
+            학습 수행: speech_only를 제외한 모든 모델들의 학습 수행
+        """
         self.model.train()
         
         train_epoch_loss = 0
@@ -103,30 +92,20 @@ class ModelTrainer():
                 audio_tensor 
                 )
             logit = output['class_logit']
+
+            # PET 적용 
             if self.args.pet: 
-                # PET
                 output = output['prediction_scores']
                 _, mask_pos = torch.where(input_ids==self.tokenizer.mask_token_id)
                 self.verbalizer_idx = self.tokenizer(self.verbalizer_value, 
                                                               add_special_tokens=False, 
                                                               return_tensors='pt').input_ids.squeeze().to(self.args.device)
-               
                 # Verbalizer Label 토큰에 대한 logit값
                 logit = torch.stack([pred_score[mask_idx, :][self.verbalizer_idx] for pred_score, mask_idx in zip(output, mask_pos)])
-                # print(output.shape, mask_pos.shape)
                 loss = self.loss_fn(logit, label)
-                
             else:
-                # ORG
                 logit = output['class_logit']
                 loss = self.loss_fn(logit, label)
-
-                if self.args.contrastive:
-                    # Contrastive
-                    pooled_output = output['pooled_output']
-                    contrastive_value, contrastive_label = contrastive_set(pooled_output, label)
-                    contrastive_loss = self.contrastive_loss_fn(contrastive_value, contrastive_label)
-                    loss += 0.1 * contrastive_loss
 
             loss.backward()
 
@@ -162,7 +141,9 @@ class ModelTrainer():
         pbar.close()
 
     def _train_speech(self):
-        # Train
+        """
+            학습 수행: speech_only model을 학습
+        """
         self.model.train()
         
         train_epoch_loss = 0
@@ -180,13 +161,6 @@ class ModelTrainer():
 
             logit = output['class_logit']
             loss = self.loss_fn(logit, label)
-
-            if self.args.contrastive:
-                # Contrastive
-                pooled_output = output['pooled_output']
-                contrastive_value, contrastive_label = contrastive_set(pooled_output, label)
-                contrastive_loss = self.contrastive_loss_fn(contrastive_value, contrastive_label)
-                loss += 0.1 * contrastive_loss
 
             loss.backward()
 
@@ -222,7 +196,9 @@ class ModelTrainer():
         pbar.close()
         
     def _validation(self):
-            # Validation
+        """
+            검증 수행: speech_only를 제외한 모든 모델들의 검증 수행
+        """
         self.model.eval()
 
         val_epoch_loss=0
@@ -247,18 +223,16 @@ class ModelTrainer():
                     audio_tensor 
                     )
                 
+                # PET 적용
                 if self.args.pet: 
-                    # PET
                     output = output['prediction_scores']
                     _, mask_pos = torch.where(input_ids==self.tokenizer.mask_token_id)
                     self.verbalizer_idx = self.tokenizer(self.verbalizer_value, 
                                                                 add_special_tokens=False, 
                                                                 return_tensors='pt').input_ids.squeeze().to(self.args.device)
-                    
                     # Verbalizer Label 토큰에 대한 logit값
                     logit = torch.stack([pred_score[mask_idx, :][self.verbalizer_idx] for pred_score, mask_idx in zip(output, mask_pos)])
                     valid_step_loss = self.loss_fn(logit, label)
-                
                 else:
                     logit = output['class_logit']
                     valid_step_loss = self.loss_fn(logit, label)
@@ -281,16 +255,15 @@ class ModelTrainer():
                    'val_micro_f1_score':mic_f1,
                    'val_accuracy':acc})
         
-        y_pred = torch.cat(output_list)
-        y_test = torch.cat(label_list)
-        
         print(f"Valid Loss: {val_epoch_loss: .4f} \nValid Acc: {acc :.4f} \
               \nValid Macro-F1: {m_f1:.4f} \nValid Weighted-F1: {w_f1:.4f} \nValid Micro-F1: {mic_f1:.4f}")
         
         return val_epoch_loss
 
     def _validation_speech(self):
-        # Validation
+        """
+            검증 수행: speech_only model을 검증
+        """
         self.model.eval()
 
         val_epoch_loss=0
@@ -327,18 +300,15 @@ class ModelTrainer():
                    'val_micro_f1_score':mic_f1,
                    'val_accuracy':acc})
         
-        y_pred = torch.cat(output_list)
-        y_test = torch.cat(label_list)
-        
         print(f"Valid Loss: {val_epoch_loss: .4f} \nValid Acc: {acc :.4f} \
               \nValid Macro-F1: {m_f1:.4f} \nValid Weighted-F1: {w_f1:.4f} \nValid Micro-F1: {mic_f1:.4f}")
         
         return val_epoch_loss
-    
-
 
     def _test(self):
-        # Validation
+        """
+            Inference 수행: speech_only를 제외한 모든 모델들의 예측 수행
+        """
         self.model.eval()
 
         output_list=[]
@@ -346,7 +316,7 @@ class ModelTrainer():
         with torch.no_grad():
 
             pbar=tqdm(self.test_dataloader)
-            for step, batch in enumerate(pbar):
+            for _, batch in enumerate(pbar):
 
                 label = batch['label'].to(self.args.device)
                 audio_tensor = batch['audio_emb'].to(self.args.device)
@@ -362,17 +332,15 @@ class ModelTrainer():
                     audio_tensor 
                     )
                 
+                # PET 적용
                 if self.args.pet: 
-                    # PET
                     output = output['prediction_scores']
                     _, mask_pos = torch.where(input_ids==self.tokenizer.mask_token_id)
                     self.verbalizer_idx = self.tokenizer(self.verbalizer_value, 
                                                                 add_special_tokens=False, 
                                                                 return_tensors='pt').input_ids.squeeze().to(self.args.device)
-                    
                     # Verbalizer Label 토큰에 대한 logit값
                     output = torch.stack([pred_score[mask_idx, :][self.verbalizer_idx] for pred_score, mask_idx in zip(output, mask_pos)])
-                    
                 else:
                     output = output['class_logit']
                 
@@ -383,20 +351,20 @@ class ModelTrainer():
         w_f1 = self._weighted_f1_score(output_list, label_list)
         mic_f1 = self._micro_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
-
-        wandb.log({'test_macro_f1_score':m_f1,
-                   'test_weighted_f1_score':w_f1,
-                   'test_micro_f1_score':mic_f1,
-                   'test_accuracy':acc})
         
-        labels = list(self.label_dict.keys())
-        y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
-        y_test = torch.cat(label_list).tolist()
-        wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
-                                                                  preds = y_pred, class_names=labels)})
+        # Confusion Matfix 생성
+        # labels = list(self.label_dict.keys())
+        # y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
+        # y_test = torch.cat(label_list).tolist()
+        # wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
+        #                                                           preds = y_pred, class_names=labels)})
+        
+        return m_f1, mic_f1, w_f1, acc
         
     def _test_speech(self):
-        # Validation
+        """
+            Inference 수행: speech_only model의 예측 수행
+        """
         self.model.eval()
 
         output_list=[]
@@ -404,7 +372,7 @@ class ModelTrainer():
         with torch.no_grad():
 
             pbar=tqdm(self.test_dataloader)
-            for step, batch in enumerate(pbar):
+            for _, batch in enumerate(pbar):
 
                 label = batch['label'].to(self.args.device)
                 audio_tensor = batch['audio_emb'].to(self.args.device)
@@ -421,16 +389,14 @@ class ModelTrainer():
         mic_f1 = self._micro_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
 
-        wandb.log({'test_macro_f1_score':m_f1,
-                   'test_weighted_f1_score':w_f1,
-                   'test_micro_f1_score':mic_f1,
-                   'test_accuracy':acc})
-        
-        labels = list(self.label_dict.keys())
-        y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
-        y_test = torch.cat(label_list).tolist()
-        wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
-                                                                  preds = y_pred, class_names=labels)})
+        # Confusion Matrix 생성
+        # labels = list(self.label_dict.keys())
+        # y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
+        # y_test = torch.cat(label_list).tolist()  
+        # wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
+        #                                                           preds = y_pred, class_names=labels)})
+    
+        return m_f1, mic_f1, w_f1, acc
 
     def _macro_f1_score(self, logit_list, label_list):
         logits = torch.cat(logit_list)
