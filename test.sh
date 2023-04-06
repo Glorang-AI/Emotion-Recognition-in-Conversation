@@ -1,0 +1,1 @@
+python3 main.py --model "compressing" --mode "test" --test_model_path "save/e30_compressing_seed0.pt"

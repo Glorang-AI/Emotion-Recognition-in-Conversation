@@ -11,7 +11,6 @@ from transformers import (
     AdamW, 
     get_linear_schedule_with_warmup,
     Wav2Vec2Config, 
-    RobertaConfig, 
     BertConfig,
     AutoTokenizer
 )
@@ -21,9 +20,8 @@ from sklearn.model_selection import train_test_split
 from dataset import ETRIDataset
 from trainer import ModelTrainer
 from models import (
-    CASEmodel, 
-    CASEmodel_V2,
-    CompressedCSEModel, 
+    CASEAttentionModel, 
+    CASECompressingModel,
     ConcatModel, 
     MultiModalMixer,
     TextOnlyModel,
@@ -37,15 +35,18 @@ def main(args):
     seed.seed_setting(args.seed)
     
     # Pass the config dictionary when you initialize W&B
-    wandb.init(project=args.wandb_project,
-            group=args.wandb_group,
-            entity=args.wandb_entity,
-            name=args.wandb_name,
-            config=args
-    )
+    if args.mode == "train":
+        wandb.init(project=args.wandb_project,
+                group=args.wandb_group,
+                entity=args.wandb_entity,
+                name=args.wandb_name,
+                config=args
+        )
 
     def text_audio_collator(batch):
-       
+        """
+            # Create a DataLoader that batches audio sequences and pads them to a fixed length
+        """
         return {'audio_emb' : pad_sequence([item['audio_emb'] for item in batch], batch_first=True),
                 'label' : torch.stack([item['label'] for item in batch]).squeeze(),
                 'input_ids' :  torch.stack([item['input_ids'] for item in batch]).squeeze(),
@@ -62,12 +63,10 @@ def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.lm_path)
 
     # -- Model Setting
-    if args.model == "CASE":
-        model = CASEmodel(args, wav_config, bert_config)
-    elif args.model == "CASE_V2":
-        model = CASEmodel_V2(args, wav_config, bert_config)
-    elif args.model == "CSE":
-        model = CompressedCSEModel(args, wav_config, bert_config)
+    if args.model == "attention":
+        model = CASEAttentionModel(args, wav_config, bert_config)
+    elif args.model == "compressing":
+        model = CASECompressingModel(args, wav_config, bert_config)
     elif args.model == "Concat":
         model = ConcatModel(args, wav_config, bert_config)
     elif args.model == "MMM":
@@ -80,6 +79,8 @@ def main(args):
     
     # Test 수행
     if args.mode == "test":
+        model.load_state_dict(torch.load(args.test_model_path))
+
         test_data = pd.read_csv(args.test_path)
         test_data.reset_index(inplace=True)
 
@@ -107,7 +108,7 @@ def main(args):
             args,
             model, loss_fn=None, optimizer=None, tokenizer=tokenizer,
             train_dataloader=None, valid_dataloader=None, test_dataloader=test_dataloader,
-            scheduler = scheduler,
+            scheduler = None,
             verbalizer_value=pet_label_dict if args.pet else None,
             label_dict = label_dict
             )
@@ -147,7 +148,6 @@ def main(args):
             pet=args.pet
             )
 
-        # Create a DataLoader that batches audio sequences and pads them to a fixed length
         train_dataloader = DataLoader(
             train_dataset, 
             batch_size=args.train_bsz,
@@ -175,7 +175,6 @@ def main(args):
             pet=args.pet
             )
 
-        # Create a DataLoader that batches audio sequences and pads them to a fixed length
         train_dataloader = DataLoader(
             train_dataset, 
             batch_size=args.train_bsz,
@@ -229,7 +228,7 @@ if __name__ == "__main__":
     parser.add_argument("--am_path", type=str, default="kresnik/wav2vec2-large-xlsr-korean")
 
     # -- Training Argument
-    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--train_bsz", type=int, default=64)
     parser.add_argument("--valid_bsz", type=int, default=64)
     parser.add_argument("--val_ratio", type=float, default=0.2)
@@ -255,6 +254,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_path", type=str, default="save")
     parser.add_argument("--embedding_path", type=str, default="data/emb_train_t.pt")
     parser.add_argument("--test_embedding_path", type=str, default="data/emb_test_t.pt")
+    parser.add_argument("--test_model_path", type=str, default="save/e150_compressing_seed0.pt")
 
     # -- utils
     parser.add_argument("--device", type=str, default="cuda:0")

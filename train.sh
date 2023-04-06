@@ -1,12 +1,19 @@
-#!/bin/bash
-
-MODELS=("Concat" "MMM"  "CASE" "CCE")
-WANDBNAME=("Concat_new_data_all" "MMM_new_data_all" "CASE_new_data_all" "CCE_new_data_all")
-LOGFOLDER=("CONCAT_log_all" "MMM_log_all"  "CASE_log_all" "CCE_log_all")
-for (( i=0; i<4; i++ ))
+SEED=(0 42 2023)
+WANDB_GROUP=("0" "42" "2023")
+for (( i=0; i<3; i++ ))
 do
-    echo ${MODELS[$i]}
-    mkdir data/${MODELS[$i]} 
-    python3 main.py --model ${MODELS[$i]} --epochs 200 --wandb_project "glorang" --wandb_entity "glorang" --wandb_name ${WANDBNAME[$i]} --device "cuda:2" --val_ratio 0 
-    cp -r wandb/latest-run/files/media data/${LOGFOLDER[$i]}
+    python3 main.py --model "compressing" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "CASE (compressing)" --device "cuda:0" --val_ratio 0
+    python3 main.py --model "compressing" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "CASE (compressing) concat" --device "cuda:0" --val_ratio 0 --mm_type "concat"
+
+    python3 main.py --model "attention" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "CASE (attention)" --device "cuda:0" --val_ratio 0
+    python3 main.py --model "attention" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "CASE (attention) concat" --device "cuda:0" --val_ratio 0 --mm_type "concat"
+
+    python3 main.py --model "MMM" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "MMM" --device "cuda:0" --val_ratio 0
+
+    python3 main.py --model "Concat" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "Concat" --device "cuda:0" --val_ratio 0
+
+    python3 main.py --model "text_only" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "text_only" --device "cuda:0" --val_ratio 0
+    python3 main.py --model "speech_only" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "speech_only" --device "cuda:0" --val_ratio 0 
 done
+
+

@@ -14,7 +14,7 @@ class ModelTrainer():
                  scheduler = None,
                  label_dict=None, verbalizer_value=None):
         
-        self.args = args # args: device, loss_fn, optimizer, save_dir
+        self.args = args
         
         self.model = model
         self.loss_fn = loss_fn
@@ -35,19 +35,28 @@ class ModelTrainer():
         self.label_dict = label_dict
         self.neutral_label = label_dict['neutral']
                 
-    def train(self):
+        # save directory 생성
+        if not os.path.exists(self.args.save_path):
+            os.makedirs(self.args.save_path)
 
-        # 학습 수행
-        for _ in trange(self.args.epochs):
+    def train(self):
+        
+        self.model.to(self.args.device)
+
+        # 학습 및 검증 수행
+        for epoch in trange(self.args.epochs):
             
             if self.args.model == "speech_only":
                 self._train_speech()
                 if self.args.val_ratio:
-                    self._validation_speech() # Validation
+                    self._validation_speech()
             else:
-                self._train() # Train
+                self._train()
                 if self.args.val_ratio:
-                    self._validation() # Validation
+                    self._validation()
+
+            if (epoch+1) % 30 == 0: 
+                torch.save(self.model.state_dict(), f"{self.args.save_path}/e{epoch+1}_{self.args.model}_seed{self.args.seed}.pt")
 
         # cuda cache 삭제
         torch.cuda.empty_cache()
@@ -58,11 +67,20 @@ class ModelTrainer():
 
     def test(self):
 
+        self.model.to(self.args.device)
+
         # Inference 수행
         if self.args.model == "speech_only":
-            self._test_speech() # Test
+            m_f1, mic_f1, w_f1, acc = self._test_speech()
         else:
-            self._test() # Test
+            m_f1, mic_f1, w_f1, acc = self._test()
+
+        name = self.args.test_model_path.split("/")[1]
+        e = name.split("_")[0][1:]
+        m = name.split("_")[1]
+        s = name.split("_")[2][4:-3]
+
+        print(f"Epoch: {e}, Seed: {s}, Model: {m}, Macro-F1: {m_f1: .4f}, Micro-F1: {mic_f1: .4f}, Weighted-F1: {w_f1: .4f}, ACC: {acc: .4f}")
     
     def _train(self):
         """
@@ -352,13 +370,6 @@ class ModelTrainer():
         mic_f1 = self._micro_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
         
-        # Confusion Matfix 생성
-        # labels = list(self.label_dict.keys())
-        # y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
-        # y_test = torch.cat(label_list).tolist()
-        # wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
-        #                                                           preds = y_pred, class_names=labels)})
-        
         return m_f1, mic_f1, w_f1, acc
         
     def _test_speech(self):
@@ -389,13 +400,6 @@ class ModelTrainer():
         mic_f1 = self._micro_f1_score(output_list, label_list)
         acc = self._accuracy_score(output_list, label_list)
 
-        # Confusion Matrix 생성
-        # labels = list(self.label_dict.keys())
-        # y_pred = torch.argmax(torch.cat(output_list), dim=1).tolist()
-        # y_test = torch.cat(label_list).tolist()  
-        # wandb.log({'Confusion Matrix':wandb.plot.confusion_matrix(probs=None, y_true=y_test,
-        #                                                           preds = y_pred, class_names=labels)})
-    
         return m_f1, mic_f1, w_f1, acc
 
     def _macro_f1_score(self, logit_list, label_list):

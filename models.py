@@ -38,89 +38,10 @@ class BertPreTrainingHeads(nn.Module):
     def forward(self, sequence_output):
         prediction_scores = self.predictions(sequence_output)
         return prediction_scores
-    
-class CASEmodel(BertPreTrainedModel):
+
+class CASEAttentionModel(BertPreTrainedModel):
     """
-    Contextual Acoustic Speech Embedding (CASE) model
-    """
-    def __init__(self, args, wav_config, bert_config, *inputs, **kwargs):
-        super().__init__(bert_config)
-
-        self.args = args
-
-        self.bert = BertModel.from_pretrained(args.lm_path)
-        
-        if self.args.size == "small" or self.args.size == "base" :
-            for params in self.bert.parameters():
-                params.requires_grad = False
-
-        if self.args.pet:
-            self.cls = BertPreTrainingHeads(bert_config)
-    
-        self.convert_dim = nn.Linear(wav_config.hidden_size, bert_config.hidden_size)
-        self.LayerNorm = nn.LayerNorm(bert_config.hidden_size, eps=bert_config.layer_norm_eps)
-        self.dense = nn.Linear(bert_config.hidden_size, self.args.hidden_size)
-        
-        self.pooler = nn.Sequential(
-            nn.Linear(self.args.hidden_size, self.args.hidden_size),
-            nn.Tanh()
-        )
-        self.classifier = nn.Sequential(
-            nn.Dropout(0.2),
-            nn.Tanh(),
-            nn.Linear(self.args.hidden_size, self.args.num_labels)
-        )
-
-    def forward(self, input_ids, attention_mask,
-                token_type_ids, speech_emb):
-        
-        context_emb = self.bert(input_ids, attention_mask, token_type_ids)[0]
-        
-        
-        speech_emb = self.convert_dim(speech_emb)            
-        att_emb = self.dot_attention(context_emb, speech_emb, speech_emb)
-        
-        if self.args.mm_type == 'concat':
-            sequence_output = torch.cat([context_emb, att_emb], dim=1)
-        elif self.args.mm_type == 'add':
-            sequence_output = att_emb + context_emb
-        
-        sequence_output = self.LayerNorm(sequence_output)
-        sequence_output = self.dense(sequence_output)
-        
-        if self.args.opt == 'mean':
-            pooled_output = self.pooler(torch.mean(sequence_output, dim=1))
-        elif self.args.opt == 'sum':
-            pooled_output = self.pooler(torch.sum(sequence_output, dim=1))
-        
-        class_logit = self.classifier(pooled_output)
-
-        if self.args.pet:
-            prediction_scores = self.cls(sequence_output)
-            return {
-                'hidden_states':sequence_output,
-                'pooled_output':pooled_output,
-                'prediction_scores':prediction_scores,
-                'class_logit':class_logit
-            }
-        else:
-            return {
-                'hidden_states':sequence_output,
-                'pooled_output':pooled_output,
-                'class_logit':class_logit
-            }
-
-    def dot_attention(self, q, k, v):
-        # q: [bs, bert_l, dim]
-        # k=v: [bs, wav_l, dim]
-        attn_weights = torch.matmul(q, k.transpose(2, 1)) # [bs, bert_l, wav_l]
-        attn_weights = F.softmax(attn_weights, -1)
-        output = torch.matmul(attn_weights, v) # [bs, bert_l, dim]
-        return output
-
-class CASEmodel_V2(BertPreTrainedModel):
-    """
-    Contextual Acoustic Speech Embedding (CASE) model
+        CASE (attention)
     """
     def __init__(self, args, wav_config, bert_config, *inputs, **kwargs):
         super().__init__(bert_config)
@@ -129,9 +50,8 @@ class CASEmodel_V2(BertPreTrainedModel):
 
         self.bert = BertModel.from_pretrained(args.lm_path)
         
-        if self.args.size == "small" or self.args.size == "base" :
-            for params in self.bert.parameters():
-                params.requires_grad = False
+        for params in self.bert.parameters():
+            params.requires_grad = False
 
         if self.args.pet:
             self.cls = BertPreTrainingHeads(bert_config)
@@ -198,7 +118,10 @@ class CASEmodel_V2(BertPreTrainedModel):
         output = torch.matmul(attn_weights, v) # [bs, bert_l, dim]
         return output
 
-class CompressedCSEModel(BertPreTrainedModel):
+class CASECompressingModel(BertPreTrainedModel):
+    """
+        CASE (compressing)
+    """
     def __init__(self, args, wav_config, bert_config):
         super().__init__(bert_config)
 
@@ -207,9 +130,9 @@ class CompressedCSEModel(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        if self.args.size == "small" or self.args.size == "base":
-            for params in self.bert.parameters():
-                params.requires_grad = False
+        
+        for params in self.bert.parameters():
+            params.requires_grad = False
 
         if self.args.pet:
             self.cls = BertPreTrainingHeads(bert_config)
@@ -300,9 +223,9 @@ class ConcatModel(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        if self.args.size == "small" or self.args.size == "base":
-            for params in self.bert.parameters():
-                params.requires_grad = False
+        
+        for params in self.bert.parameters():
+            params.requires_grad = False
 
         self.cls = BertPreTrainingHeads(bert_config)
         
@@ -416,9 +339,9 @@ class MultiModalMixer(BertPreTrainedModel):
         self.text_config = bert_config
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        if self.args.size == "small" or self.args.size == "base":
-            for params in self.bert.parameters():
-                params.requires_grad = False
+        
+        for params in self.bert.parameters():
+            params.requires_grad = False
 
         # self.cls = BertPreTrainingHeads(bert_config)
         
@@ -494,9 +417,9 @@ class TextOnlyModel(BertPreTrainedModel):
         self.args = args
 
         self.bert = BertModel.from_pretrained(args.lm_path)
-        if self.args.size == "small" or self.args.size == "base":
-            for params in self.bert.parameters():
-                params.requires_grad = False
+        
+        for params in self.bert.parameters():
+            params.requires_grad = False
 
         self.classifier = nn.Sequential(
             nn.Dropout(),
