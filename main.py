@@ -249,11 +249,11 @@ if __name__ == "__main__":
     parser.add_argument("--num_labels", type=int, default=7)
 
     ## -- directory
-    parser.add_argument("--train_path", type=str, default="data/session_train.csv")
-    parser.add_argument("--test_path", type=str, default="data/session_test.csv")
+    parser.add_argument("--train_path", type=str, default="data/train.csv")
+    parser.add_argument("--test_path", type=str, default="data/test.csv")
     parser.add_argument("--save_path", type=str, default="save")
-    parser.add_argument("--embedding_path", type=str, default="data/emb_train_t.pt")
-    parser.add_argument("--test_embedding_path", type=str, default="data/emb_test_t.pt")
+    parser.add_argument("--embedding_path", type=str, default="data/emb_train.pt")
+    parser.add_argument("--test_embedding_path", type=str, default="data/emb_test.pt")
     parser.add_argument("--test_model_path", type=str, default="save/e150_compressing_seed0.pt")
 
     # -- utils

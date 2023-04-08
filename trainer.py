@@ -55,8 +55,8 @@ class ModelTrainer():
                 if self.args.val_ratio:
                     self._validation()
 
-            if (epoch+1) % 30 == 0: 
-                torch.save(self.model.state_dict(), f"{self.args.save_path}/e{epoch+1}_{self.args.model}_seed{self.args.seed}.pt")
+            if (epoch+1) % 30 == 0: # final 지우기
+                torch.save(self.model.state_dict(), f"final_{self.args.save_path}/e{epoch+1}_{self.args.model}_seed{self.args.seed}.pt")
 
         # cuda cache 삭제
         torch.cuda.empty_cache()

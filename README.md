@@ -11,3 +11,11 @@ python3 main.py --model {model_name} --wandb_project {your_project_name} --wandb
 chmod +x pet_train
 ./pet_train.sh
 ```
+
+### 순서
+```
+1. make_data.py ( annotation -> data.csv 생성)
+2. split.py (train-test를 Session 기준, Label별 비율을 유지하도록 32:8로 split)
+3. train.sh 실행
+4. test.sh 실행
+```
