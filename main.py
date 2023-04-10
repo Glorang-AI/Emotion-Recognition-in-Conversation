@@ -223,28 +223,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # -- Choose Pretrained Model
-    parser.add_argument("--lm_path", type=str, default="klue/bert-base", help="You can choose models among (klue-bert series and klue-roberta series) (default: klue/bert-base")
-    parser.add_argument("--am_path", type=str, default="kresnik/wav2vec2-large-xlsr-korean")
+    parser.add_argument("--lm_path", type=str, default="klue/bert-base", help="Choose models among (klue-bert series and klue-roberta series) (default: klue/bert-base")
+    parser.add_argument("--am_path", type=str, default="kresnik/wav2vec2-large-xlsr-korean", help="Choose models among (wav2vec2 series) (default: kresnik/wav2vec2-large-xlsr-korean)")
 
     # -- Training Argument
-    parser.add_argument("--lr", type=float, default=2e-5)
-    parser.add_argument("--train_bsz", type=int, default=64)
-    parser.add_argument("--valid_bsz", type=int, default=64)
-    parser.add_argument("--val_ratio", type=float, default=0.2)
-    parser.add_argument("--context_max_len", type=int, default=128)
-    parser.add_argument("--audio_max_len", type=int, default=512)
-    parser.add_argument("--hidden_size", type=int, default=256)
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--scheduler", type=str, default=None)
-    parser.add_argument("--pet", type=bool, default=False)
-    parser.add_argument("--loss", type=str, default="crossentropy")
+    parser.add_argument("--lr", type=float, default=2e-5, help="learning rate")
+    parser.add_argument("--train_bsz", type=int, default=64, help="train batch size")
+    parser.add_argument("--valid_bsz", type=int, default=64, help="valid and test batch size")
+    parser.add_argument("--val_ratio", type=float, default=0.2, help="validation dataset ratio")
+    parser.add_argument("--context_max_len", type=int, default=128, help="max length in text model")
+    parser.add_argument("--audio_max_len", type=int, default=512, help="max length in audio model")
+    parser.add_argument("--hidden_size", type=int, default=256, help="hidden dimension in multi-modal classifier")
+    parser.add_argument("--epochs", type=int, default=50, help="epochs")
+    parser.add_argument("--scheduler", type=str, default=None, help="Choose scheduler between 'None' and 'linear' (default: None)")
+    parser.add_argument("--pet", type=bool, default=False, help="Can use PET if you put in any value in this argument")
+    parser.add_argument("--loss", type=str, default="crossentropy", help="Choose loss function between 'crossentropy' and 'focal' (default: crossentropy)")
     parser.add_argument("--gamma", type=float, default=1.0, help="focalloss's gamma argument")
     
     # -- Model Argument
-    parser.add_argument("--model", type=str, default="CASE")
-    parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Can choose audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
-    parser.add_argument("--opt", type=str, default='mean', help="Can choose operators type between 'mean' and 'sum'")
-    parser.add_argument("--mm_type", type=str, default='add', help="concat or add")
+    parser.add_argument("--model", type=str, default="compressing", help="Choose Model among (compressing, attention, MMM, Concat, text_only, speech_only) (default: compressing)")
+    parser.add_argument("--audio_emb_type", type=str, default="last_hidden_state", help="Choose audio embedding type between 'last_hidden_state' and 'extract_features' (default: last_hidden_state)")
+    parser.add_argument("--opt", type=str, default='mean', help="Choose operators type between 'mean' and 'sum' (default: mean)")
+    parser.add_argument("--mm_type", type=str, default='add', help="Choose operators between 'concat' or 'add' (default: add)")
     parser.add_argument("--num_labels", type=int, default=7)
 
     ## -- directory
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_path", type=str, default="save")
     parser.add_argument("--embedding_path", type=str, default="data/emb_train.pt")
     parser.add_argument("--test_embedding_path", type=str, default="data/emb_test.pt")
-    parser.add_argument("--test_model_path", type=str, default="save/e150_compressing_seed0.pt")
+    parser.add_argument("--test_model_path", type=str, default="save/e150_compressing_seed0.pt", help="Enter the path of the model you want to test")
 
     # -- utils
     parser.add_argument("--device", type=str, default="cuda:0")
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_name", type=str, default="case_audio_base")
     
     ## -- mode
-    parser.add_argument("--mode", type=str, default="train")
+    parser.add_argument("--mode", type=str, default="train", help="Change the value to 'test' when you want to test")
 
     args = parser.parse_args()
 
