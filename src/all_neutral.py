@@ -6,7 +6,7 @@ from sklearn.metrics import f1_score, accuracy_score
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test_path", type=str, default="data/session_test.csv")
+    parser.add_argument("--test_path", type=str, default="data/test.csv")
 
     args = parser.parse_args([])
 

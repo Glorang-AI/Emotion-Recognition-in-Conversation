@@ -40,9 +40,19 @@ if __name__ == "__main__":
             lower_ratio -= 0.001
 
 
-    print("Train Dataset에서 각 Label별 비율")
+    print("전체 대비 Train Dataset에서 각 Label별 비율")
     for label in df['labels'].unique():
         print(f"{label}의 비율: {df[(df.session.isin(train_session)) & (df.labels==label)].labels.count() / len(df[df.labels==label]): .4f}")
+
+    print()
+    print("Train Dataset Label 비율")
+    for label in df['labels'].unique():
+        print(f"{label}의 비율: {df[(df.session.isin(train_session)) & (df.labels==label)].labels.count() / len(df[df.session.isin(train_session)]): .4f}")
+
+    print()
+    print("Test Dataset Label 비율")
+    for label in df['labels'].unique():
+        print(f"{label}의 비율: {df[(~df.session.isin(train_session)) & (df.labels==label)].labels.count() / len(df[~df.session.isin(train_session)]): .4f}")
 
     train = df[df.session.isin(train_session)]
     test = df[~df.session.isin(train_session)]

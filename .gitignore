@@ -1,6 +1,6 @@
 # ignore all files in data folder
-!/data/
-/data/*
+# !/data/
+# /data/*
 
 !/save/
 /save/*

@@ -81,10 +81,11 @@ class ModelTrainer():
         name = self.args.test_model_path.split("/")[1]
         e = name.split("_")[0][1:]
         m = name.split("_")[1]
-        s = name.split("_")[2][4:-3]
+        s = name.split("_")[-1][4:-3]
 
         print(f"Epoch: {e}, Seed: {s}, Model: {m}, Macro-F1: {m_f1: .4f}, Micro-F1: {mic_f1: .4f}, Weighted-F1: {w_f1: .4f}, ACC: {acc: .4f}")
-        return e, s, m, m_f1, mic_f1, w_f1, acc # 삭제
+        return e, s, m, m_f1, mic_f1, w_f1, acc
+    
     def _train(self):
         """
             학습 수행: speech_only를 제외한 모든 모델들의 학습 수행

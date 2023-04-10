@@ -1,10 +1,15 @@
+import os
+import sys
 import argparse
 from transformers import Wav2Vec2Config, BertConfig
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import CASEAttentionModel, CASECompressingModel, MultiModalMixer
 
 
 if __name__ == "__main__":
+    
+
     # Define a config dictionary object
     parser = argparse.ArgumentParser()
 
