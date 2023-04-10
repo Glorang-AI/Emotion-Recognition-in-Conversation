@@ -1,13 +1,8 @@
-import random
-import numpy as np
 import torch
-import torch.nn.functional as F
 import pandas as pd
-from typing import Callable, Tuple, Dict
+
+from typing import Callable, Dict
 from torch.utils.data import Dataset
-from datasets import load_dataset
-from torch.utils.data import DataLoader
-from torch.nn.utils.rnn import pad_sequence
 
 class ETRIDataset(Dataset):
     """

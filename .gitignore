@@ -1,7 +1,10 @@
 # ignore all files in data folder
-data/
-wav/
+!/data/
+/data/*
+
+!/save/
+/save/*
+
 wandb/
+
 __pycache__/
-save/
-*.pyc

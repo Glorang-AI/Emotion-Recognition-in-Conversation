@@ -1,4 +1,3 @@
-import os
 import wandb
 import argparse
 import pandas as pd

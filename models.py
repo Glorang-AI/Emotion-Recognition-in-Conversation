@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers.activations import ACT2FN, gelu
-from transformers import BertPreTrainedModel, BertModel, RobertaPreTrainedModel, RobertaModel
+
+from transformers.activations import ACT2FN
+from transformers import BertPreTrainedModel, BertModel
 
 class BertLMPredictionHead(nn.Module):
     def __init__(self, config):

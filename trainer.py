@@ -4,7 +4,6 @@ import wandb
 
 from tqdm import tqdm, trange
 from torcheval.metrics.functional import multiclass_f1_score, multiclass_accuracy
-from transformers import AutoTokenizer
 
 class ModelTrainer():
     
@@ -55,8 +54,12 @@ class ModelTrainer():
                 if self.args.val_ratio:
                     self._validation()
 
-            if (epoch+1) % 30 == 0: # final 지우기
-                torch.save(self.model.state_dict(), f"final_{self.args.save_path}/e{epoch+1}_{self.args.model}_seed{self.args.seed}.pt")
+            if (epoch+1) % 30 == 0:
+                
+                if self.args.mm_type == "concat" and self.args.model in ["compressing", "attention"]:
+                    torch.save(self.model.state_dict(), f"{self.args.save_path}/e{epoch+1}_{self.args.model}_{self.args.mm_type}_seed{self.args.seed}.pt")
+                else:
+                    torch.save(self.model.state_dict(), f"{self.args.save_path}/e{epoch+1}_{self.args.model}_seed{self.args.seed}.pt")
 
         # cuda cache 삭제
         torch.cuda.empty_cache()
@@ -81,7 +84,7 @@ class ModelTrainer():
         s = name.split("_")[2][4:-3]
 
         print(f"Epoch: {e}, Seed: {s}, Model: {m}, Macro-F1: {m_f1: .4f}, Micro-F1: {mic_f1: .4f}, Weighted-F1: {w_f1: .4f}, ACC: {acc: .4f}")
-    
+        return e, s, m, m_f1, mic_f1, w_f1, acc # 삭제
     def _train(self):
         """
             학습 수행: speech_only를 제외한 모든 모델들의 학습 수행

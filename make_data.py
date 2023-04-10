@@ -1,10 +1,11 @@
 import os
 import glob
 import re
-from tqdm import tqdm
 import pandas as pd
 
-def clena_text(txt):
+from tqdm import tqdm
+
+def clean_text(txt):
     txt = re.sub(r'[cnNulb*+/]/', '', txt) # 특수기호 제거
     txt = re.sub(r'\([^)]*\)', '', txt) # 괄호 속 제거 
     txt= re.sub(' +', ' ', txt).strip() # 연속 공백 제거
@@ -45,7 +46,7 @@ def annotation_to_csv(path):
     for segment in tqdm(segment_list):
         session = segment.split('_')[0].replace('Sess', 'Session')
         text = read_text(os.path.join(path,'wav', session, segment+'.txt')) # text 
-        text = clena_text(text)
+        text = clean_text(text)
         wav = os.path.join('wav', session, segment+'.wav') # wav file
         
         session_list.append(segment.split('_')[0])
