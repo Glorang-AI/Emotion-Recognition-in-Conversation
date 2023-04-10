@@ -2,7 +2,7 @@ SEED=(0)
 WANDB_GROUP=("0")
 for (( i=0; i<1; i++ ))
 do
-    python3 main.py --model "compressing" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "Final CASE (compressing)" --device "cuda:0" --val_ratio 0
+    # python3 main.py --model "compressing" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "Final CASE (compressing)" --device "cuda:0" --val_ratio 0
     python3 main.py --model "compressing" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "Final CASE (compressing) concat" --device "cuda:0" --val_ratio 0 --mm_type "concat"
 
     python3 main.py --model "attention" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "Final CASE (attention)" --device "cuda:0" --val_ratio 0
