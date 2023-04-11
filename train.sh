@@ -1,5 +1,5 @@
-SEED=(100 1)
-WANDB_GROUP=("100" "1")
+SEED=(0 1 42)
+WANDB_GROUP=("0" "1" "42")
 for (( i=0; i<2; i++ ))
 do
     python3 main.py --model "compressing" --seed ${SEED[$i]} --epochs 150 --wandb_project "glorang" --wandb_entity "glorang" --wandb_group ${WANDB_GROUP[$i]} --wandb_name "Final CASE (compressing)" --device "cuda:0" --val_ratio 0

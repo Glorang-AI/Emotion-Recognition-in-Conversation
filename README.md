@@ -87,3 +87,15 @@ chmod +x test.sh
 ```
 
 ## Experiments
+- Epoch 150으로 진행한 후, 매 30 epoch 마다 저장 후 test ( 최종 120 Epoch 결과 )
+- `CASE (compressing)`가 Macro-F1, Micro-F1 모두에서 가장 좋은 성능을 보임.
+
+|                           | Macro-F1 | Micro-F1 | Weighted-F1 |
+| ------------------------- | -------- | -------- | ----------- |
+| CASE (compressing)        | 32.82    | 43.77    | 87.89       |
+| CASE (attention)          | 27.91    | 39.15    | 86.60       |
+| Concat                    | 30.16    | 40.54    | 87.94       |
+| MMM                       | 30.01    | 40.07    | 86.94       |
+| CASE-concat (compressing) | 31.62    | 45.34    | 88.40       |
+| CASE-concat (attention)   | 26.49    | 34.53    | 86.51       |
+
